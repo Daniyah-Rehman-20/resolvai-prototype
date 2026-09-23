@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import APIRouter,UploadFile,File,HTTPException,Depends
 from sqlalchemy import select
@@ -9,6 +10,7 @@ from app.models import Document
 router=APIRouter(prefix="/documents",tags=["documents"])
 UP=Path("./uploads")
 UP.mkdir(exist_ok=True)
+POLICY_DIR=Path(__file__).resolve().parents[3]/"data"/"policies"
 
 def out(d):
     status = "READY" if d.status=="INDEXED" else ("PROCESSING" if d.status=="UPLOADED" else d.status)
@@ -23,10 +25,25 @@ def out(d):
         "content":"Indexed synthetic/demo knowledge document.",
     }
 
+def local_policy_out(path:Path):
+    text=path.read_text(encoding="utf-8")
+    return {
+        "id":path.stem,
+        "name":path.stem.replace("-"," ").title(),
+        "type":"MD",
+        "uploadedAt":datetime.fromtimestamp(path.stat().st_mtime,tz=timezone.utc),
+        "status":"READY",
+        "chunks":max(1,text.count("\n## ")+1),
+        "indexed":True,
+        "content":text,
+    }
+
 @router.get("")
 async def all(db:AsyncSession=Depends(get_db)):
     r=await db.execute(select(Document).order_by(Document.created_at.desc()))
-    return [out(x) for x in r.scalars().all()]
+    uploaded=[out(x) for x in r.scalars().all()]
+    policies=[local_policy_out(p) for p in sorted(POLICY_DIR.glob("*.md"))]
+    return policies+uploaded
 
 @router.post("",status_code=202)
 async def upload(file:UploadFile=File(...),db:AsyncSession=Depends(get_db)):
