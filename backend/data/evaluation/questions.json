@@ -1,0 +1,182 @@
+[
+  {
+    "question": "Gateway says success but merchant says failed. Case 1.",
+    "expected_policy": "merchant-reconciliation",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "UPI payment has been pending for 20 minutes. Case 2.",
+    "expected_policy": "upi-pending-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "My card was charged twice. Case 3.",
+    "expected_policy": "duplicate-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Refund still has not completed. Case 4.",
+    "expected_policy": "refund",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Cash collection does not match order status. Case 5.",
+    "expected_policy": "cash-on-delivery",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Gateway says success but merchant says failed. Case 6.",
+    "expected_policy": "merchant-reconciliation",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "UPI payment has been pending for 20 minutes. Case 7.",
+    "expected_policy": "upi-pending-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "My card was charged twice. Case 8.",
+    "expected_policy": "duplicate-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Refund still has not completed. Case 9.",
+    "expected_policy": "refund",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Cash collection does not match order status. Case 10.",
+    "expected_policy": "cash-on-delivery",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Gateway says success but merchant says failed. Case 11.",
+    "expected_policy": "merchant-reconciliation",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "UPI payment has been pending for 20 minutes. Case 12.",
+    "expected_policy": "upi-pending-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "My card was charged twice. Case 13.",
+    "expected_policy": "duplicate-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Refund still has not completed. Case 14.",
+    "expected_policy": "refund",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Cash collection does not match order status. Case 15.",
+    "expected_policy": "cash-on-delivery",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Gateway says success but merchant says failed. Case 16.",
+    "expected_policy": "merchant-reconciliation",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "UPI payment has been pending for 20 minutes. Case 17.",
+    "expected_policy": "upi-pending-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "My card was charged twice. Case 18.",
+    "expected_policy": "duplicate-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Refund still has not completed. Case 19.",
+    "expected_policy": "refund",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Cash collection does not match order status. Case 20.",
+    "expected_policy": "cash-on-delivery",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Gateway says success but merchant says failed. Case 21.",
+    "expected_policy": "merchant-reconciliation",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "UPI payment has been pending for 20 minutes. Case 22.",
+    "expected_policy": "upi-pending-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "My card was charged twice. Case 23.",
+    "expected_policy": "duplicate-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Refund still has not completed. Case 24.",
+    "expected_policy": "refund",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Cash collection does not match order status. Case 25.",
+    "expected_policy": "cash-on-delivery",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Gateway says success but merchant says failed. Case 26.",
+    "expected_policy": "merchant-reconciliation",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "UPI payment has been pending for 20 minutes. Case 27.",
+    "expected_policy": "upi-pending-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "My card was charged twice. Case 28.",
+    "expected_policy": "duplicate-payment",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Refund still has not completed. Case 29.",
+    "expected_policy": "refund",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  },
+  {
+    "question": "Cash collection does not match order status. Case 30.",
+    "expected_policy": "cash-on-delivery",
+    "expected_issue_type": "synthetic",
+    "expected_action": "review_policy"
+  }
+]
