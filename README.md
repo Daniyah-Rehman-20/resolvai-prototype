@@ -69,11 +69,28 @@ The shared shell includes sidebar navigation, global transaction search, notific
 
 Pages/components call the service layer and do not import mock fixtures. Next.js route wrappers pass identifiers to client components. The shared context refreshes after mutations so related views use the same state.
 
-### Future FastAPI integration
+### FastAPI integration
 
-Replace service implementations with HTTP calls while preserving their typed results. Existing functions include `getTransactions`, `getTransaction`, `startInvestigation`, `getInvestigation`, `getApprovals`, `approveAction`, `rejectAction`, and `getKnowledgeDocuments`. `getWorkspace` currently loads a combined snapshot; a backend adapter may compose domain endpoints into this result. The `startInvestigation` callback represents future streamed trace updates.
+The Next.js workspace now calls the FastAPI backend directly. The frontend service layer uses `NEXT_PUBLIC_API_URL` (default: `http://127.0.0.1:8000`) for transactions, investigations, approvals, disputes, documents, audit history, and demo reset. Theme/notification/failure-simulation preferences remain browser-local because they are UI settings.
 
-Implement real authentication, server-side authorization, validation, idempotency, storage, audit integrity, and payment-provider integration in the backend before connecting real operations. Do not put API secrets in client-side code or `NEXT_PUBLIC_` variables. LangGraph, RAG, MCP, FastAPI, Redis, PostgreSQL, queues, and Azure are intentionally future backend work.
+Run the backend first:
+
+```bash
+cd backend
+python -m app.db.seed
+python -m uvicorn app.main:app --reload
+```
+
+Then, from the repository root in a second terminal:
+
+```bash
+npm ci
+npm run dev
+```
+
+Open http://localhost:3000. The local backend must allow that origin through `CORS_ORIGINS`. For deployment, set `NEXT_PUBLIC_API_URL` to the public FastAPI URL and set backend `CORS_ORIGINS` to the deployed frontend origin.
+
+The integration remains a synthetic payment-operations demo: no real bank, gateway, merchant, refund, or external LLM action is performed. Real production use would still require authentication, authorization, provider integrations, durable infrastructure, stronger audit controls, and production secret management.
 
 ## Demo behavior and limits
 
