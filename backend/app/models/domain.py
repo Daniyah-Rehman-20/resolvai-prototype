@@ -2,21 +2,29 @@ from datetime import datetime
 from sqlalchemy import String, Float, ForeignKey, Text, JSON, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, TimestampMixin
+
 class Customer(Base,TimestampMixin):
     __tablename__="customers"; id:Mapped[str]=mapped_column(String,primary_key=True); name:Mapped[str]=mapped_column(String); email:Mapped[str]=mapped_column(String,unique=True)
+
 class Order(Base,TimestampMixin):
     __tablename__="orders"; id:Mapped[str]=mapped_column(String,primary_key=True); customer_id:Mapped[str]=mapped_column(ForeignKey("customers.id")); status:Mapped[str]=mapped_column(String); amount:Mapped[float]=mapped_column(Float)
+
 class Transaction(Base,TimestampMixin):
     __tablename__="transactions"; id:Mapped[int]=mapped_column(primary_key=True,autoincrement=True); transaction_id:Mapped[str]=mapped_column(String,unique=True,index=True); order_id:Mapped[str]=mapped_column(ForeignKey("orders.id"),index=True); customer_id:Mapped[str]=mapped_column(ForeignKey("customers.id"),index=True); payment_method:Mapped[str]=mapped_column(String,index=True); amount:Mapped[float]=mapped_column(Float); currency:Mapped[str]=mapped_column(String,default="INR"); bank_status:Mapped[str]=mapped_column(String); gateway_status:Mapped[str]=mapped_column(String); merchant_status:Mapped[str]=mapped_column(String); overall_status:Mapped[str]=mapped_column(String,index=True); gateway_reference:Mapped[str|None]=mapped_column(String,nullable=True); masked_payment_reference:Mapped[str]=mapped_column(String); issue:Mapped[str]=mapped_column(String,default="")
-    customer:Mapped[Customer]=relationship(); order:Mapped[Order]=relationship()
+    customer:Mapped[Customer]=relationship(lazy="selectin"); order:Mapped[Order]=relationship(lazy="selectin")
     __table_args__=(Index("ix_tx_method_status","payment_method","overall_status"),)
+
 class Investigation(Base,TimestampMixin):
     __tablename__="investigations"; id:Mapped[str]=mapped_column(String,primary_key=True); transaction_id:Mapped[str]=mapped_column(String,index=True); question:Mapped[str]=mapped_column(Text); status:Mapped[str]=mapped_column(String); issue:Mapped[str]=mapped_column(String); summary:Mapped[str]=mapped_column(Text); likely_cause:Mapped[str]=mapped_column(Text); recommended_action:Mapped[str]=mapped_column(String); risk_level:Mapped[str]=mapped_column(String); approval_required:Mapped[bool]=mapped_column(default=False); evidence:Mapped[list]=mapped_column(JSON,default=list); sources:Mapped[list]=mapped_column(JSON,default=list); agent_steps:Mapped[list]=mapped_column(JSON,default=list); tool_calls:Mapped[list]=mapped_column(JSON,default=list); duration_ms:Mapped[int]=mapped_column(default=0)
+
 class ApprovalRequest(Base,TimestampMixin):
     __tablename__="approval_requests"; id:Mapped[str]=mapped_column(String,primary_key=True); transaction_id:Mapped[str]=mapped_column(String,index=True); investigation_id:Mapped[str]=mapped_column(String,index=True); recommended_action:Mapped[str]=mapped_column(String); amount:Mapped[float|None]=mapped_column(Float,nullable=True); reason:Mapped[str]=mapped_column(Text); evidence:Mapped[list]=mapped_column(JSON,default=list); policy_citations:Mapped[list]=mapped_column(JSON,default=list); risk_level:Mapped[str]=mapped_column(String); status:Mapped[str]=mapped_column(String,index=True); reviewer:Mapped[str|None]=mapped_column(String,nullable=True); reviewer_note:Mapped[str|None]=mapped_column(Text,nullable=True); reviewed_at:Mapped[datetime|None]=mapped_column(nullable=True); execution_result:Mapped[dict|None]=mapped_column(JSON,nullable=True)
+
 class Dispute(Base,TimestampMixin):
     __tablename__="disputes"; id:Mapped[str]=mapped_column(String,primary_key=True); transaction_id:Mapped[str]=mapped_column(String,index=True); investigation_id:Mapped[str|None]=mapped_column(String,nullable=True); reason:Mapped[str]=mapped_column(Text); status:Mapped[str]=mapped_column(String,index=True); note:Mapped[str]=mapped_column(Text,default="")
+
 class Document(Base,TimestampMixin):
     __tablename__="documents"; id:Mapped[str]=mapped_column(String,primary_key=True); name:Mapped[str]=mapped_column(String); category:Mapped[str]=mapped_column(String); path:Mapped[str]=mapped_column(String); status:Mapped[str]=mapped_column(String,index=True); chunks:Mapped[int]=mapped_column(default=0); indexed:Mapped[bool]=mapped_column(default=False)
+
 class AuditEvent(Base):
     __tablename__="audit_events"; id:Mapped[str]=mapped_column(String,primary_key=True); actor:Mapped[str]=mapped_column(String); action:Mapped[str]=mapped_column(String,index=True); resource_type:Mapped[str]=mapped_column(String); resource_id:Mapped[str]=mapped_column(String,index=True); timestamp:Mapped[datetime]=mapped_column(default=datetime.utcnow); metadata_json:Mapped[dict]=mapped_column("metadata",JSON,default=dict); correlation_id:Mapped[str]=mapped_column(String,index=True)
