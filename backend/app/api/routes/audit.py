@@ -3,11 +3,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models import AuditEvent
+from app.core.security import Principal, require
 
 router=APIRouter(prefix="/audit",tags=["audit"])
 
 @router.get("")
-async def all(db:AsyncSession=Depends(get_db)):
+async def all(db:AsyncSession=Depends(get_db), _: Principal = Depends(require("analyst"))):
     r=await db.execute(
         select(AuditEvent).order_by(AuditEvent.timestamp.desc()).limit(250)
     )

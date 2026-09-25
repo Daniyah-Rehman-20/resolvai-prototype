@@ -37,6 +37,8 @@ const issues: Record<PaymentStatus, string> = {
   REFUND_PENDING: "Duplicate payment refund",
   REFUNDED: "Refund completed",
   DISPUTED: "Merchant receipt mismatch",
+  PAYMENT_FAILED: "Payment failed",
+  RECONCILIATION_REQUIRED: "Reconciliation required",
 };
 export const transactions: Transaction[] = Array.from(
   { length: 48 },

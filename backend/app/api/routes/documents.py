@@ -6,6 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models import Document
+from app.core.security import Principal, require
+from app.workers.celery_app import ingest_document
 
 router=APIRouter(prefix="/documents",tags=["documents"])
 UP=Path("./uploads")
@@ -39,14 +41,14 @@ def local_policy_out(path:Path):
     }
 
 @router.get("")
-async def all(db:AsyncSession=Depends(get_db)):
+async def all(db:AsyncSession=Depends(get_db), _: Principal = Depends(require("viewer"))):
     r=await db.execute(select(Document).order_by(Document.created_at.desc()))
     uploaded=[out(x) for x in r.scalars().all()]
     policies=[local_policy_out(p) for p in sorted(POLICY_DIR.glob("*.md"))]
     return policies+uploaded
 
 @router.post("",status_code=202)
-async def upload(file:UploadFile=File(...),db:AsyncSession=Depends(get_db)):
+async def upload(file:UploadFile=File(...),db:AsyncSession=Depends(get_db), _: Principal = Depends(require("admin"))):
     ext=Path(file.filename or "").suffix.lower()
     if ext not in {".pdf",".txt",".md",".docx"}:
         raise HTTPException(422,"Unsupported file type")
@@ -72,14 +74,15 @@ async def upload(file:UploadFile=File(...),db:AsyncSession=Depends(get_db)):
     return out(d)
 
 @router.post("/{id}/index")
-async def index_document(id:str,db:AsyncSession=Depends(get_db)):
+async def index_document(id:str,db:AsyncSession=Depends(get_db), _: Principal = Depends(require("admin"))):
     r=await db.execute(select(Document).where(Document.id==id))
     d=r.scalar_one_or_none()
     if not d:
         raise HTTPException(404,"Document not found")
-    d.status="INDEXED"
-    d.indexed=True
-    d.chunks=max(d.chunks,12)
+    if d.status in {"QUEUED", "PROCESSING"}:
+        return out(d)
+    d.status = "QUEUED"
     await db.commit()
     await db.refresh(d)
+    ingest_document.delay(d.id)
     return out(d)
