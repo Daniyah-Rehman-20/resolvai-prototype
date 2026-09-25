@@ -4,11 +4,12 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models import AuditEvent,ApprovalRequest,Investigation,Dispute,Document
+from app.core.security import Principal, require
 
 router=APIRouter(prefix="/demo",tags=["demo"])
 
 @router.post("/reset")
-async def reset_demo(db:AsyncSession=Depends(get_db)):
+async def reset_demo(db:AsyncSession=Depends(get_db), _: Principal = Depends(require("admin"))):
     for model in [AuditEvent,ApprovalRequest,Investigation,Dispute,Document]:
         await db.execute(delete(model))
     await db.commit()
