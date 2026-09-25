@@ -3,9 +3,10 @@ from sqlalchemy import select,func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models import Transaction,Investigation,ApprovalRequest,Dispute
+from app.core.security import Principal, require
 router=APIRouter(prefix="/analytics",tags=["analytics"])
 @router.get("")
-async def analytics(db:AsyncSession=Depends(get_db)):
+async def analytics(db:AsyncSession=Depends(get_db), _: Principal = Depends(require("viewer"))):
     rows=(await db.execute(select(Transaction))).scalars().all(); total=len(rows); counts={}
     for x in rows: counts[x.overall_status]=counts.get(x.overall_status,0)+1
     inv=(await db.execute(select(func.count()).select_from(Investigation))).scalar_one(); approvals=(await db.execute(select(func.count()).select_from(ApprovalRequest))).scalar_one(); disputes=(await db.execute(select(func.count()).select_from(Dispute))).scalar_one()
