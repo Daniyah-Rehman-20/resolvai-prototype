@@ -2,27 +2,56 @@ services:
   api:
     build: .
     env_file: .env
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     ports: ["8000:8000"]
+    volumes: ["uploads:/app/uploads"]
     depends_on:
       postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
     environment:
       DATABASE_URL: postgresql+asyncpg://payresolve:payresolve@postgres:5432/payresolve
+
   postgres:
-    image: postgres:17
+    image: postgres:17.6-alpine
     environment: {POSTGRES_USER: payresolve, POSTGRES_PASSWORD: payresolve, POSTGRES_DB: payresolve}
     healthcheck: {test: ["CMD-SHELL", "pg_isready -U payresolve"], interval: 5s, timeout: 5s, retries: 10}
     ports: ["5432:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 3s, retries: 10}
     ports: ["6379:6379"]
+    volumes: ["redis-data:/data"]
+
   rabbitmq:
-    image: rabbitmq:4-management
+    image: rabbitmq:4.1-management-alpine
+    healthcheck: {test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"], interval: 10s, timeout: 5s, retries: 10}
     ports: ["5672:5672", "15672:15672"]
+    volumes: ["rabbitmq-data:/var/lib/rabbitmq"]
+
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.15.4
     ports: ["6333:6333"]
+    volumes: ["qdrant-data:/qdrant/storage"]
+
   celery-worker:
     build: .
     command: celery -A app.workers.celery_app.celery_app worker --loglevel=INFO
     env_file: .env
-    depends_on: [rabbitmq,redis]
+    volumes: ["uploads:/app/uploads"]
+    depends_on:
+      rabbitmq: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      qdrant: {condition: service_started}
+    environment:
+      DATABASE_URL: postgresql+asyncpg://payresolve:payresolve@postgres:5432/payresolve
+
+volumes:
+  postgres-data:
+  redis-data:
+  rabbitmq-data:
+  qdrant-data:
+  uploads:
