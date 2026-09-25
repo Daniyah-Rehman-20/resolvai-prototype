@@ -11,6 +11,8 @@ import type {
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const SETTINGS_KEY = "payresolve-settings-v1";
+const DEMO_TOKEN = process.env.NEXT_PUBLIC_DEMO_TOKEN || "payresolve-demo-token";
+const DEMO_ROLE = process.env.NEXT_PUBLIC_DEMO_ROLE || "approver";
 const DEFAULT_SETTINGS: Settings = {
   theme: "light",
   notifications: true,
@@ -37,6 +39,10 @@ function writeSettings(settings: Settings) {
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
+  // Demo-only identity bridge. Replace with an OIDC/JWT session provider before real deployment.
+  headers.set("Authorization", `Bearer ${DEMO_TOKEN}`);
+  headers.set("X-Demo-Role", DEMO_ROLE);
+  headers.set("X-Demo-User", "payresolve-ui");
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
