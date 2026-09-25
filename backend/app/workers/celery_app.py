@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from pathlib import Path
 from celery import Celery
 from docx import Document as DocxDocument
@@ -73,7 +74,7 @@ def ingest_document(self, document_id: str):
         )
     points = [
         models.PointStruct(
-            id=f"{document_id}-{i}",
+            id=str(uuid.uuid5(uuid.NAMESPACE_URL, f"payresolve:{document_id}:{i}")),
             vector=vector,
             payload={"document": document_id, "name": name, "chunk_id": f"{document_id}-{i}", "text": text},
         )
