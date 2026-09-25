@@ -12,7 +12,7 @@ import type {
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const SETTINGS_KEY = "payresolve-settings-v1";
 const DEMO_TOKEN = process.env.NEXT_PUBLIC_DEMO_TOKEN || "payresolve-demo-token";
-const DEMO_ROLE = process.env.NEXT_PUBLIC_DEMO_ROLE || "approver";
+const DEMO_ROLE = process.env.NEXT_PUBLIC_DEMO_ROLE || "admin";
 const DEFAULT_SETTINGS: Settings = {
   theme: "light",
   notifications: true,
@@ -181,7 +181,12 @@ export async function decideApproval(
     `/approvals/${encodeURIComponent(approvalId)}/${endpoint}`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(decision === "APPROVED"
+          ? { "Idempotency-Key": crypto.randomUUID() }
+          : {}),
+      },
       body: JSON.stringify({ note: note.trim() }),
     },
   );
