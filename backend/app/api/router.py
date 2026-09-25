@@ -10,6 +10,7 @@ from app.api.routes import (
     chat,
     audit,
     demo,
+    metrics,
 )
 
 router=APIRouter()
@@ -25,5 +26,6 @@ for r in [
     chat.router,
     audit.router,
     demo.router,
+    metrics.router,
 ]:
     router.include_router(r)
