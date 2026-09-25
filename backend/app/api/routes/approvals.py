@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
@@ -6,6 +6,7 @@ from app.models import ApprovalRequest
 from app.schemas.domain import ApprovalDecision
 from app.services.approvals import decide
 from app.core.security import Principal, require
+from app.core.idempotency import IdempotencyGuard
 
 router = APIRouter(prefix="/approvals", tags=["approvals"])
 
@@ -50,8 +51,17 @@ async def approve(
     id: str, b: ApprovalDecision, request: Request,
     db: AsyncSession = Depends(get_db),
     principal: Principal = Depends(require("approver")),
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
 ):
-    return out(await decide(db, id, "APPROVED", b.note, principal.subject, request.state.correlation_id))
+    guard = IdempotencyGuard(idempotency_key, f"approval:{id}:approve")
+    await guard.acquire()
+    try:
+        result = out(await decide(db, id, "APPROVED", b.note, principal.subject, request.state.correlation_id))
+        await guard.complete()
+        return result
+    except Exception:
+        await guard.release()
+        raise
 
 @router.post("/{id}/reject")
 async def reject(
