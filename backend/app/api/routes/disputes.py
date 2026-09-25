@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models import Dispute,AuditEvent
 from app.schemas.domain import DisputeCreate,DisputeUpdate
+from app.core.security import Principal, require
 
 router=APIRouter(prefix="/disputes",tags=["disputes"])
 
@@ -19,12 +20,12 @@ def out(d):
     }
 
 @router.get("")
-async def all(db:AsyncSession=Depends(get_db)):
+async def all(db:AsyncSession=Depends(get_db), _: Principal = Depends(require("viewer"))):
     r=await db.execute(select(Dispute).order_by(Dispute.created_at.desc()))
     return [out(x) for x in r.scalars().all()]
 
 @router.post("",status_code=201)
-async def create(b:DisputeCreate,request:Request,db:AsyncSession=Depends(get_db)):
+async def create(b:DisputeCreate,request:Request,db:AsyncSession=Depends(get_db), principal: Principal = Depends(require("approver"))):
     d=Dispute(
         id=f"DSP-{uuid.uuid4().hex[:8]}",
         transaction_id=b.transaction_id,
@@ -36,7 +37,7 @@ async def create(b:DisputeCreate,request:Request,db:AsyncSession=Depends(get_db)
     db.add(d)
     db.add(AuditEvent(
         id=f"AUD-{uuid.uuid4().hex[:8]}",
-        actor="demo-reviewer",
+        actor=principal.subject,
         action="DISPUTE_CREATED",
         resource_type="dispute",
         resource_id=d.id,
@@ -48,14 +49,14 @@ async def create(b:DisputeCreate,request:Request,db:AsyncSession=Depends(get_db)
     return out(d)
 
 @router.patch("/{id}")
-async def patch(id:str,b:DisputeUpdate,request:Request,db:AsyncSession=Depends(get_db)):
+async def patch(id:str,b:DisputeUpdate,request:Request,db:AsyncSession=Depends(get_db), principal: Principal = Depends(require("approver"))):
     r=await db.execute(select(Dispute).where(Dispute.id==id))
     d=r.scalar_one()
     d.status="UNDER_REVIEW" if b.status=="IN_REVIEW" else b.status
     d.note=b.note
     db.add(AuditEvent(
         id=f"AUD-{uuid.uuid4().hex[:8]}",
-        actor="demo-reviewer",
+        actor=principal.subject,
         action=f"DISPUTE_{d.status}",
         resource_type="dispute",
         resource_id=d.id,
