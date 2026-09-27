@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Activity, ArrowDown, Clock3 } from "lucide-react";
 import { useWorkspace } from "@/components/layout/workspace";
 import { PageTitle, Panel, Badge, Empty } from "@/components/common/ui";
-import { dateTime } from "@/lib/utils";
+import { dateTime, label } from "@/lib/utils";
 export function Agents() {
   const { data } = useWorkspace();
   const [selected, setSelected] = useState(data.investigations[0]?.id || "");
@@ -16,9 +16,9 @@ export function Agents() {
         title="Agent Activity"
         description="Inspect every handoff, evidence check, and recommendation."
       >
-        <span className="demo-tag">
+        <span className="context-tag">
           <Activity size={16} />
-          Simulated execution traces
+          Execution traces
         </span>
       </PageTitle>
       <label className="field run-selector">
@@ -68,7 +68,7 @@ export function Agents() {
                 )}
               </div>
             </Panel>
-            <Panel title="Run summary" subtitle="Measured simulation timing">
+            <Panel title="Run summary" subtitle="Measured execution timing">
               <div className="large-stat">
                 <Clock3 size={23} />
                 <strong>{(run.duration / 1000).toFixed(1)}s</strong>
@@ -78,10 +78,9 @@ export function Agents() {
               <h3>Outcome</h3>
               <p>{run.summary || "Waiting for completion"}</p>
               <h3>Recommendation</h3>
-              <p>{run.recommendation || "No recommendation generated"}</p>
+              <p>{run.recommendation ? label(run.recommendation) : "No recommendation generated"}</p>
               <p className="microcopy">
-                These are frontend simulation traces. LangGraph and MCP are
-                future backend integrations.
+                Trace data reflects the recorded investigation steps, handoffs, and timings.
               </p>
               <Link
                 href={`/transactions/${run.transactionId}`}

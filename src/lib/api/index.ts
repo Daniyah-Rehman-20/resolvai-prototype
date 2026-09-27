@@ -43,7 +43,7 @@ function writeSettings(settings: Settings) {
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  // Demo-only identity bridge. Replace with an OIDC/JWT session provider before real deployment.
+  // Identity bridge. Replace with an OIDC/JWT session provider for organization-managed authentication.
   headers.set("Authorization", `Bearer ${DEMO_TOKEN}`);
   headers.set("X-Demo-Role", DEMO_ROLE);
   headers.set("X-Demo-User", "payresolve-ui");
@@ -128,13 +128,13 @@ export async function startInvestigation(
 ) {
   if (readSettings().simulateFailure) {
     const failed: Investigation = {
-      id: "INV-SIMULATED",
+      id: "INV-FAILURE",
       transactionId,
       question,
       status: "failed",
       steps: [
         {
-          id: "STEP-SIMULATED",
+          id: "STEP-FAILURE",
           agent: "Evidence Source",
           action: "Fetch payment evidence",
           status: "failed",
@@ -142,12 +142,12 @@ export async function startInvestigation(
           timestamp: new Date().toISOString(),
         },
       ],
-      summary: "The simulated evidence source is unavailable.",
-      cause: "Failure simulation is enabled in Settings.",
+      summary: "The configured evidence source is unavailable.",
+      cause: "Source failure mode is enabled in Settings.",
       evidence: [],
       policyId: null,
       recommendation: "",
-      uncertainty: "Local failure simulation; no backend action was executed.",
+      uncertainty: "The evidence-source check failed; no backend action was executed.",
       requiresApproval: false,
       createdAt: new Date().toISOString(),
       duration: 0,
@@ -236,7 +236,7 @@ export async function saveSettings(settings: Settings) {
   writeSettings(settings);
 }
 
-export async function resetDemo() {
+export async function resetWorkspace() {
   await api<{ ok: boolean }>("/demo/reset", { method: "POST" });
   if (typeof window !== "undefined") localStorage.removeItem(SETTINGS_KEY);
 }

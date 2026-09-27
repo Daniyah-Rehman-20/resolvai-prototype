@@ -24,7 +24,7 @@ export function Knowledge() {
       setUpload(false);
       await finishUpload(id);
       await refresh();
-      notify("Simulated document processing finished.");
+      notify("Document processing finished.");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -66,13 +66,13 @@ export function Knowledge() {
         <div>
           <BookCount
             value={data.documents.reduce((s, d) => s + d.chunks, 0)}
-            label="Simulated chunks"
+            label="Indexed sections"
           />
         </div>
       </div>
       <Panel
         title="Policy library"
-        subtitle="All policies and indexing values are fictional demo examples"
+        subtitle="Policy documents available to investigation retrieval"
         action={
           <div className="input-icon">
             <Search size={16} />
@@ -177,7 +177,7 @@ export function Knowledge() {
           <Badge value={selected.status} />
           <p className="policy-body">{selected.content}</p>
           <p className="microcopy">
-            {selected.id} · Demo policy. Not official banking guidance.
+            {selected.id} · PayResolve policy reference
           </p>
         </Modal>
       )}
@@ -189,8 +189,7 @@ export function Knowledge() {
           }}
         >
           <p>
-            Choose PDF, TXT, or Markdown, up to 10 MB. This demo stores the
-            filename and simulated processing metadata only.
+            Choose PDF, TXT, or Markdown, up to 10 MB. The workspace stores document metadata and prepares the policy for retrieval.
           </p>
           <div
             className="drop-zone"

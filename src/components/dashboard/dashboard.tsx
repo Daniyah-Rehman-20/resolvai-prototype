@@ -54,7 +54,7 @@ export function Trend({ transactions }: { transactions: Transaction[] }) {
         viewBox="0 0 600 190"
         className="trend-chart"
         role="img"
-        aria-label="Daily successful payments versus other outcomes in the demo dataset"
+        aria-label="Daily successful payments versus other outcomes in the transaction dataset"
       >
         {[0, 1, 2, 3].map((i) => (
           <g key={i}>
@@ -201,7 +201,7 @@ export function Dashboard() {
     [
       "AI-resolved cases",
       resolved.length,
-      "Simulated · no action needed",
+      "Resolved · no action needed",
       Sparkles,
     ],
     [
@@ -213,7 +213,7 @@ export function Dashboard() {
             1000
           ).toFixed(1) + "s"
         : "—",
-      "Auto-resolved demo cases only",
+      "Auto-resolved cases only",
       Timer,
     ],
   ] as const;
@@ -225,10 +225,10 @@ export function Dashboard() {
     const url = URL.createObjectURL(new Blob([content], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "payresolve-demo-summary.csv";
+    a.download = "payresolve-summary.csv";
     a.click();
     URL.revokeObjectURL(url);
-    notify("Demo summary exported.");
+    notify("Summary exported.");
   }
   return (
     <>
@@ -237,7 +237,7 @@ export function Dashboard() {
         title="Dashboard"
         description="A clear view of your payments. A faster path to resolution."
       >
-        <span className="date-pill">15–21 Sep 2026 · demo cohort</span>
+        <span className="date-pill">15–21 Sep 2026 · transaction cohort</span>
         <button className="button secondary" onClick={exportSummary}>
           <Download size={16} />
           Export
@@ -275,14 +275,14 @@ export function Dashboard() {
       <div className="grid-two">
         <Panel
           title="Payment outcomes"
-          subtitle="Daily transaction counts · fictional demo cohort"
+          subtitle="Daily transaction counts · current cohort"
           action={<span className="subtle">7 days</span>}
         >
           <Trend transactions={tx} />
         </Panel>
         <Panel
           title="Payment methods"
-          subtitle="Distribution across the demo dataset"
+          subtitle="Distribution across the transaction dataset"
         >
           <MethodBars transactions={tx} />
           <div className="panel-foot">
@@ -326,7 +326,7 @@ export function Dashboard() {
             waiting.slice(0, 3).map((a) => (
               <Link className="approval-preview" key={a.id} href="/approvals">
                 <div>
-                  <strong>{a.action}</strong>
+                  <strong>{label(a.action)}</strong>
                   <p>
                     {a.transactionId} · {dateTime(a.createdAt)}
                   </p>

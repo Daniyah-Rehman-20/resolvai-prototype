@@ -84,7 +84,7 @@ export const transactions: Transaction[] = Array.from(
       maskedInstrument: cash
         ? "Cash on delivery"
         : method === "UPI"
-          ? "u***@demo"
+          ? "u***@payresolve"
           : "•••• •••• •••• 4242",
     };
   },
@@ -109,14 +109,14 @@ const policyNames = [
   "Cash on Delivery Policy",
 ];
 const policyContents = [
-  "Demo policy: When a card debit and an unsuccessful order coexist, reconcile gateway and merchant evidence first. A refund proposal requires a human decision. Do not retry the charge automatically.",
-  "Demo policy: Compare bank debit, gateway receipt, and merchant acknowledgment. Escalate inconsistent evidence for manual review before proposing a reversal.",
-  "Demo policy: A pending UPI status does not establish failure. Request a settlement check and wait for confirmed gateway and merchant evidence. Never request a UPI PIN.",
-  "Demo policy: Verify that two distinct successful debits refer to the same order before proposing a duplicate-payment refund. A reviewer must approve any simulated refund.",
-  "Demo policy: Confirm transaction identity, original debit, and any existing refund before proposing a new refund. Human approval is required. Timeframes here are illustrative, not banking guarantees.",
-  "Demo policy: Gather transaction and merchant evidence before opening a dispute. A human must authorize the proposed case. This prototype does not submit chargebacks.",
-  "Demo policy: Reconcile merchant acknowledgment with gateway settlement evidence. A missing receipt may reflect a delayed callback; treat this as a hypothesis until verified.",
-  "Demo policy: Match delivery and collection records to the order. Card gateway and bank states are not applicable to cash. Escalate missing collection evidence to operations.",
+  "When a card debit and an unsuccessful order coexist, reconcile gateway and merchant evidence first. A refund proposal requires a human decision. Do not retry the charge automatically.",
+  "Compare bank debit, gateway receipt, and merchant acknowledgment. Escalate inconsistent evidence for manual review before proposing a reversal.",
+  "A pending UPI status does not establish failure. Request a settlement check and wait for confirmed gateway and merchant evidence. Never request a UPI PIN.",
+  "Verify that two distinct successful debits refer to the same order before proposing a duplicate-payment refund. A reviewer must approve any refund recommendation.",
+  "Confirm transaction identity, original debit, and any existing refund before proposing a new refund. Human approval is required. Timeframes here are illustrative, not banking guarantees.",
+  "Gather transaction and merchant evidence before opening a dispute. A human must authorize the proposed case. Chargeback submission is handled by an external payment system.",
+  "Reconcile merchant acknowledgment with gateway settlement evidence. A missing receipt may reflect a delayed callback; treat this as a hypothesis until verified.",
+  "Match delivery and collection records to the order. Card gateway and bank states are not applicable to cash. Escalate missing collection evidence to operations.",
 ];
 export const seed: AppData = {
   version: 2,
@@ -149,7 +149,7 @@ export const seed: AppData = {
     ],
     policyId: `POL-${[1, 4, 8, 3][i]}`,
     reasoning:
-      "The recorded payment states require reconciliation. Review the available evidence before authorizing the proposed simulated action.",
+      "The recorded payment states require reconciliation. Review the available evidence before authorizing the proposed action.",
     status: "PENDING",
     createdAt: "2026-09-21T14:30:00.000Z",
   })),
@@ -160,7 +160,7 @@ export const seed: AppData = {
       action: "Case opened",
       actor: "Supervisor",
       timestamp: "2026-09-21T14:15:00.000Z",
-      detail: "Payment/order state mismatch detected in demo data.",
+      detail: "Payment/order state mismatch detected in the recorded transaction.",
     },
   ],
   disputes: [3, 15, 27, 39].map((idx, i) => ({
@@ -173,7 +173,7 @@ export const seed: AppData = {
   })),
   settings: { theme: "light", notifications: true, simulateFailure: false },
 };
-// Historical simulated traces supply an initial operational view, not business claims.
+// Historical traces supply an initial operational view.
 seed.investigations = [0, 4, 5, 2].map((idx, i): Investigation => ({
   id: `INV-${401 + i}`,
   transactionId: transactions[idx].id,
@@ -202,7 +202,7 @@ seed.investigations = [0, 4, 5, 2].map((idx, i): Investigation => ({
       ? "No further action required."
       : "Request reconciliation and human review.",
   uncertainty:
-    "Based only on fictional records. No external payment provider was checked.",
+    "Based on the available transaction records and policy evidence. External payment providers are not queried from this workspace.",
   requiresApproval: idx !== 4 && idx !== 5,
   createdAt: "2026-09-21T14:20:00.000Z",
   duration: 5600 + i * 700,

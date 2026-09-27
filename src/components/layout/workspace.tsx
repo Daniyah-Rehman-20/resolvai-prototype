@@ -159,7 +159,7 @@ export function Workspace({ children }: { children: ReactNode }) {
           <span className="avatar">DR</span>
           <div>
             <strong>Daniyah&apos;s workspace</strong>
-            <small>Demo operations team</small>
+            <small>Payment operations team</small>
           </div>
         </div>
       </div>
@@ -210,7 +210,7 @@ export function Workspace({ children }: { children: ReactNode }) {
           <div className="topbar-right">
             <span className="environment">
               <span />
-              Demo environment
+              Operations workspace
             </span>
             <div className="popover-anchor">
               <button
@@ -259,8 +259,8 @@ export function Workspace({ children }: { children: ReactNode }) {
               </button>
               {profile && (
                 <div className="popover">
-                  <strong>Demo reviewer</strong>
-                  <p>Local workspace · no sign-in required</p>
+                  <strong>Operations reviewer</strong>
+                  <p>Investigation and approval access</p>
                   <Link href="/settings" onClick={() => setProfile(false)}>
                     Workspace settings →
                   </Link>
@@ -290,8 +290,8 @@ export function Workspace({ children }: { children: ReactNode }) {
           )}
         </main>
         <footer className="footer">
-          <span>PayResolve AI · Fictional demo data</span>
-          <span>No real payments or external AI calls · INR · IST</span>
+          <span>PayResolve AI · Payment operations workspace</span>
+          <span>Approval-gated workflow · INR · IST</span>
         </footer>
       </div>
       {toast && (

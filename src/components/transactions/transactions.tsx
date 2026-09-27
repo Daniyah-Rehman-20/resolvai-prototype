@@ -65,7 +65,7 @@ export function Transactions({ initialQuery = "" }: { initialQuery?: string }) {
         description="Trace every payment from the first debit to the final outcome."
       >
         <span className="date-pill">
-          {data.transactions.length} demo transactions
+          {data.transactions.length} transactions
         </span>
       </PageTitle>
       <section className="panel">
@@ -280,7 +280,7 @@ export function TransactionDetail({ id }: { id: string }) {
     return (
       <Empty
         title="Transaction not found"
-        detail="Return to Transactions to choose an existing demo record."
+        detail="Return to Transactions to choose an existing transaction."
       />
     );
   const investigation = data.investigations.find((i) => i.transactionId === id);
@@ -389,7 +389,7 @@ export function TransactionDetail({ id }: { id: string }) {
           </Panel>
           <Panel
             title="Transaction timeline"
-            subtitle="Recorded events and local workspace decisions"
+            subtitle="Recorded events and workspace decisions"
           >
             <div className="timeline">
               <div>
@@ -427,7 +427,7 @@ export function TransactionDetail({ id }: { id: string }) {
         <div className="grid-two">
           <Panel
             title="AI investigation"
-            subtitle="Rule-based simulation · recommendations require verification"
+            subtitle="Rule-based investigation · recommendations require verification"
           >
             {investigation ? (
               <>
@@ -436,7 +436,7 @@ export function TransactionDetail({ id }: { id: string }) {
                 <p>{investigation.cause}</p>
                 <div className="callout">
                   <strong>Recommended action</strong>
-                  <p>{investigation.recommendation}</p>
+                  <p>{label(investigation.recommendation)}</p>
                 </div>
                 <p className="subtle">{investigation.uncertainty}</p>
                 <MoreLink href="/approvals">Review proposed actions</MoreLink>
@@ -444,13 +444,13 @@ export function TransactionDetail({ id }: { id: string }) {
             ) : (
               <Empty
                 title="Ready to investigate"
-                detail="Use Investigate payment to generate a simulated evidence summary."
+                detail="Use Investigate payment to generate an evidence summary."
               />
             )}
           </Panel>
           <Panel
             title="Evidence & retrieved policy"
-            subtitle="Fictional sources for this demo"
+            subtitle="Retrieved policy references"
           >
             <ul className="evidence-list">
               {(
@@ -482,7 +482,7 @@ export function TransactionDetail({ id }: { id: string }) {
       {tab === "Audit log" && (
         <Panel
           title="Audit history"
-          subtitle="Local reviewer decisions and agent events"
+          subtitle="Reviewer decisions and agent events"
         >
           {events.length ? (
             <div className="table-scroll">

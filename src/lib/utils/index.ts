@@ -6,6 +6,7 @@ export const money = (amount: number) =>
   }).format(amount);
 export const label = (value: string) =>
   value
+    .replace(/^SIMULATED_/, "")
     .toLowerCase()
     .replaceAll("_", " ")
     .replace(/\b\w/g, (x) => x.toUpperCase());

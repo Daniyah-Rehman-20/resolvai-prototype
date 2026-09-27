@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Sun, Moon, Save, RotateCcw, ShieldCheck } from "lucide-react";
 import { useWorkspace } from "@/components/layout/workspace";
 import { PageTitle, Panel, Modal } from "@/components/common/ui";
-import { saveSettings, resetDemo } from "@/lib/api";
+import { saveSettings, resetWorkspace } from "@/lib/api";
 export function Settings() {
   const { data, refresh, notify } = useWorkspace();
   const [settings, setSettings] = useState(data.settings);
@@ -28,7 +28,7 @@ export function Settings() {
       <PageTitle
         eyebrow="YOUR WORKSPACE"
         title="Settings"
-        description="Make the workspace yours and control the demo experience."
+        description="Make the workspace yours and control operational preferences."
       />
       <div className="settings-layout">
         <Panel title="Workspace preferences" subtitle="Saved in this browser">
@@ -70,8 +70,8 @@ export function Settings() {
           </label>
           <label className="setting-row">
             <span>
-              <strong>Simulate a source failure</strong>
-              <p>Test investigation errors and failed document indexing.</p>
+              <strong>Source failure mode</strong>
+              <p>Exercise investigation error handling and document indexing recovery.</p>
             </span>
             <input
               type="checkbox"
@@ -87,7 +87,7 @@ export function Settings() {
               <strong>Currency & timezone</strong>
               <p>Indian Rupee (INR) · India Standard Time (IST)</p>
             </div>
-            <span className="subtle">Demo default</span>
+            <span className="subtle">Workspace default</span>
           </div>
           {error && (
             <p className="error-text" role="alert">
@@ -99,23 +99,21 @@ export function Settings() {
             {busy ? "Saving…" : "Save preferences"}
           </button>
         </Panel>
-        <Panel title="Simulation boundaries">
+        <Panel title="Operational safeguards">
           <div className="callout">
             <ShieldCheck size={24} />
             <div>
-              <strong>Your demo stays local</strong>
+              <strong>External execution controls</strong>
               <p>
-                No real payment systems, credentials, authentication, or
-                external AI services are connected.
+                Sensitive actions remain approval-gated. External payment execution and external AI providers are not connected from this workspace.
               </p>
             </div>
           </div>
           <p>
-            Reviewer decisions, uploads, and settings are stored in this
-            browser. Uploaded document bytes are not retained.
+            Workspace preferences are stored in this browser. Operational records are managed by the backend.
           </p>
           <p>
-            Use the reset below to restore the original fictional records.
+            Use the reset below to restore the starter workspace records.
             Export anything you need before resetting.
           </p>
           <button
@@ -123,21 +121,20 @@ export function Settings() {
             onClick={() => setReset(true)}
           >
             <RotateCcw size={16} />
-            Reset demo data
+            Reset workspace data
           </button>
         </Panel>
       </div>
       {reset && (
         <Modal
-          title="Reset the demo workspace?"
+          title="Reset the workspace?"
           onClose={() => {
             if (!busy) setReset(false);
           }}
         >
           <p>
             This removes local investigations, review decisions, document
-            metadata, case updates, and preferences, then restores the fictional
-            starter dataset.
+            metadata, case updates, and preferences, then restores the starter dataset.
           </p>
           <div className="modal-actions">
             <button
@@ -153,7 +150,7 @@ export function Settings() {
               onClick={async () => {
                 setBusy(true);
                 try {
-                  await resetDemo();
+                  await resetWorkspace();
                   await refresh();
                   setSettings({
                     theme: "light",
@@ -161,7 +158,7 @@ export function Settings() {
                     simulateFailure: false,
                   });
                   setReset(false);
-                  notify("Demo data reset.");
+                  notify("Workspace data reset.");
                 } catch (e) {
                   setError((e as Error).message);
                 } finally {

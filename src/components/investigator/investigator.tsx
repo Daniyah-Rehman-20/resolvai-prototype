@@ -14,7 +14,7 @@ import { useWorkspace } from "@/components/layout/workspace";
 import { PageTitle, Panel, Badge, Empty } from "@/components/common/ui";
 import { startInvestigation, saveSettings } from "@/lib/api";
 import type { Investigation } from "@/lib/types";
-import { money, dateTime } from "@/lib/utils";
+import { money, dateTime, label } from "@/lib/utils";
 export function Investigator({ transaction = "" }: { transaction?: string }) {
   const { data, refresh, notify } = useWorkspace();
   const [selected, setSelected] = useState(
@@ -48,9 +48,9 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
         title="AI Investigator"
         description="Follow every check. Understand the evidence behind each recommendation."
       >
-        <span className="demo-tag">
+        <span className="context-tag">
           <Sparkles size={15} />
-          Simulated agent workflow
+          Agent workflow
         </span>
       </PageTitle>
       <div className="investigator-layout">
@@ -120,8 +120,7 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
               </p>
             )}
             <p className="microcopy">
-              Uses fictional evidence and deterministic demo rules. No live LLM,
-              bank, or payment API is connected.
+              Uses recorded evidence and deterministic safety rules. External payment execution is not connected from this workspace.
             </p>
           </Panel>
           <Panel
@@ -162,7 +161,7 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
             {!result ? (
               <Empty
                 title="Ready when you are"
-                detail="Start an investigation to trace the payment, retrieve a demo policy, and review a proposed resolution."
+                detail="Start an investigation to trace the payment, retrieve a policy, and review a proposed resolution."
               />
             ) : (
               <div className="agent-steps">
@@ -201,8 +200,7 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
             <div className="error-box">
               <h3>Evidence source unavailable</h3>
               <p>
-                The simulated failure setting interrupted this run. No action
-                was proposed.
+                The source failure setting interrupted this run. No action was proposed.
               </p>
               <button
                 className="button"
@@ -215,7 +213,7 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
                   await run();
                 }}
               >
-                Disable simulated failure & retry
+                Disable source failure & retry
               </button>
             </div>
           )}
@@ -235,7 +233,7 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
                 ))}
               </ul>
               <div className="policy-source">
-                <small>RETRIEVED DEMO POLICY</small>
+                <small>RETRIEVED POLICY</small>
                 <h3>{policy?.name}</h3>
                 <p>{policy?.content}</p>
                 <Link className="text-link" href="/knowledge">
@@ -245,10 +243,10 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
               <div className="callout">
                 <ShieldCheck size={22} />
                 <div>
-                  <strong>{result.recommendation}</strong>
+                  <strong>{label(result.recommendation)}</strong>
                   <p>
                     {result.requiresApproval
-                      ? "Human approval is required before any simulated payment action."
+                      ? "Human approval is required before this payment action can proceed."
                       : "No payment action has been proposed."}
                   </p>
                   {result.requiresApproval && (

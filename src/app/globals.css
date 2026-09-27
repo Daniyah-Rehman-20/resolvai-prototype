@@ -1090,7 +1090,7 @@ tbody tr:hover {
   white-space: normal;
   min-width: 180px;
 }
-.demo-tag {
+.context-tag {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1642,7 +1642,7 @@ th,
 .run-list small,
 .document-link,
 .date-pill,
-.demo-tag {
+.context-tag {
   font-size: 12px;
 }
 .panel p,
@@ -1944,7 +1944,7 @@ th,
   .tabs button {
     font-size: 12px;
   }
-  .demo-tag {
+  .context-tag {
     font-size: 11px;
   }
   .approval-card-top {

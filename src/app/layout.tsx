@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "PayResolve AI | Payment Operations",
   description:
-    "Investigate payment issues, review evidence, and authorize simulated resolutions.",
+    "Investigate payment issues, review evidence, and authorize recommended resolutions.",
 };
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

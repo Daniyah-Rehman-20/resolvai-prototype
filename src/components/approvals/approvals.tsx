@@ -50,9 +50,9 @@ export function Approvals() {
         title="Approval Queue"
         description="AI proposes. You review the evidence and authorize the next step."
       >
-        <span className="demo-tag">
+        <span className="context-tag">
           <ShieldCheck size={16} />
-          Local simulation only
+          Approval-gated actions
         </span>
       </PageTitle>
       <div className="tabs" role="tablist" aria-label="Approval status">
@@ -87,7 +87,7 @@ export function Approvals() {
                   <small>
                     {a.id} · {dateTime(a.createdAt)}
                   </small>
-                  <h2>{a.action}</h2>
+                  <h2>{label(a.action)}</h2>
                 </div>
                 <Badge value={a.status} />
               </div>
@@ -183,14 +183,13 @@ export function Approvals() {
           }}
         >
           <p>
-            You are reviewing <strong>{decision.approval.action}</strong> for{" "}
+            You are reviewing <strong>{label(decision.approval.action)}</strong> for{" "}
             <strong>{decision.approval.transactionId}</strong>.
           </p>
           <div className="callout">
             <ShieldCheck size={20} />
             <p>
-              This updates local demo records and creates an audit event. No
-              money will move.
+              This records the decision and creates an audit event. External payment execution is not connected from this workspace.
             </p>
           </div>
           <label className="field">

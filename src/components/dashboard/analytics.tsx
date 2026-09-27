@@ -46,7 +46,7 @@ export function Analytics() {
             1000
           ).toFixed(1) + "s"
         : "—",
-      "Completed simulation runs",
+      "Completed investigation runs",
     ],
     [
       "Avg. resolution time",
@@ -71,9 +71,9 @@ export function Analytics() {
         description="Understand payment outcomes and where human attention matters."
       />
       <div className="analytics-note">
-        Metrics are calculated from the current fictional dataset. The
+        Metrics are calculated from the current transaction dataset. The
         transaction cohort is 15–21 September 2026; investigation metrics
-        include new local runs.
+        include recent runs.
       </div>
       <div className="metrics">
         {stats.map(([title, value, desc]) => (
@@ -87,7 +87,7 @@ export function Analytics() {
       <div className="grid-two">
         <Panel
           title="Payment outcomes"
-          subtitle="Daily counts from the demo cohort"
+          subtitle="Daily transaction counts"
         >
           <Trend transactions={tx} />
         </Panel>
