@@ -1,83 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { LoaderCircle, RadioTower } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, Clock3, CreditCard, LoaderCircle } from "lucide-react";
 
-import { Panel, Badge } from "@/components/common/ui";
+import { Panel } from "@/components/common/ui";
 import { useWorkspace } from "@/components/layout/workspace";
-import { generateIncomingTransaction, pushPaymentEvent } from "@/lib/api";
-import type { Transaction } from "@/lib/types";
+import { runPaymentUseCase } from "@/lib/api";
+
+const cases = [
+  {
+    id: "charged-order-failed",
+    title: "Money deducted, order failed",
+    problem: "Bank debit succeeds, but merchant/order confirmation fails.",
+    result: "PayResolve investigates automatically and recommends reconciliation.",
+    Icon: AlertTriangle,
+  },
+  {
+    id: "payment-pending",
+    title: "Payment stuck pending",
+    problem: "UPI payment has no final success or failure confirmation.",
+    result: "PayResolve recommends waiting and rechecking instead of refunding too early.",
+    Icon: Clock3,
+  },
+  {
+    id: "duplicate-charge",
+    title: "Customer charged twice",
+    problem: "Two successful charges are detected for the same order.",
+    result: "PayResolve proposes a refund and sends it to human approval.",
+    Icon: CreditCard,
+  },
+] as const;
 
 export function IngestTransactionPanel() {
   const { refresh, notify } = useWorkspace();
-  const [busy, setBusy] = useState(false);
-  const [created, setCreated] = useState<Transaction | null>(null);
-
-  async function generate() {
-    setBusy(true);
-    try {
-      const tx = await generateIncomingTransaction();
-      setCreated(tx);
-      await refresh();
-      notify(`${tx.id} received from the payment event stream.`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Panel
-      title="Incoming transaction stream"
-      subtitle="Receive a new payment record without manually entering customer or payment details"
-    >
-      <div className="review-banner">
-        <div className="banner-icon">
-          <RadioTower size={22} />
-        </div>
-        <div>
-          <strong>Automated transaction ingestion</strong>
-          <p>
-            PayResolve generates the transaction, customer, order, amount and
-            payment method as an upstream payment system would provide them.
-          </p>
-        </div>
-        <button className="button" disabled={busy} onClick={generate}>
-          {busy ? <LoaderCircle className="spin" size={17} /> : <RadioTower size={17} />}
-          {busy ? "Receiving…" : "Generate incoming transaction"}
-        </button>
-      </div>
-      {created && (
-        <p className="microcopy">
-          Received <strong>{created.id}</strong> · {created.customer.name} ·{" "}
-          ₹{created.amount.toLocaleString("en-IN")} · <Badge value={created.method} /> ·{" "}
-          <Badge value={created.status} />{" "}
-          <Link className="text-link" href={`/transactions/${created.id}`}>
-            Open transaction →
-          </Link>
-        </p>
-      )}
-    </Panel>
-  );
-}
-
-export function PaymentEventPanel({ transaction }: { transaction: Transaction }) {
-  const { refresh, notify } = useWorkspace();
+  const router = useRouter();
   const [busy, setBusy] = useState("");
 
-  const events = [
-    ["BANK", "DEBITED", "Bank debit confirmed"],
-    ["GATEWAY", "SUCCESS", "Gateway processing succeeded"],
-    ["MERCHANT", "FAILED", "Merchant confirmation failed"],
-    ["ORDER", "PAYMENT_FAILED", "Order marked payment failed"],
-  ] as const;
-
-  async function apply(source: string, status: string, issue: string) {
-    setBusy(`${source}-${status}`);
+  async function run(useCase: (typeof cases)[number]["id"]) {
+    setBusy(useCase);
     try {
-      await pushPaymentEvent(transaction.id, source, status, issue);
+      const result = await runPaymentUseCase(useCase);
       await refresh();
-      notify(`${source} event applied to ${transaction.id}.`);
+      notify(`${result.message}: ${result.recommendation}`);
+      router.push(`/transactions/${result.transaction.id}`);
     } finally {
       setBusy("");
     }
@@ -85,24 +51,29 @@ export function PaymentEventPanel({ transaction }: { transaction: Transaction })
 
   return (
     <Panel
-      title="Incoming payment events"
-      subtitle="Apply upstream bank, gateway, merchant, and order updates to this transaction"
+      title="Run a real payment use case"
+      subtitle="No customer entry or manual payment-state editing. Each scenario simulates upstream systems and automatically runs the investigation."
     >
-      <div className="compact-list">
-        {events.map(([source, status, issue]) => (
-          <button
-            className="compact-row"
-            key={`${source}-${status}`}
-            disabled={Boolean(busy)}
-            onClick={() => apply(source, status, issue)}
-          >
-            <span>{source}</span>
-            <Badge value={status} />
-          </button>
+      <div className="issue-grid">
+        {cases.map(({ id, title, problem, result, Icon }) => (
+          <div key={id}>
+            <span className="item-icon">
+              <Icon size={18} />
+            </span>
+            <strong>{title}</strong>
+            <p>{problem}</p>
+            <small>{result}</small>
+            <button className="button" disabled={Boolean(busy)} onClick={() => run(id)}>
+              {busy === id && <LoaderCircle className="spin" size={16} />}
+              {busy === id ? "Running…" : "Run use case"}
+            </button>
+          </div>
         ))}
       </div>
       <p className="microcopy">
-        Each event is persisted and appears in the transaction audit timeline.
+        In production these records would arrive from gateway webhooks, bank events,
+        merchant services, and the order service. These buttons reproduce that integration
+        for the portfolio deployment.
       </p>
     </Panel>
   );
