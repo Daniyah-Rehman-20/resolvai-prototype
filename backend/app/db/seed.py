@@ -1,6 +1,8 @@
 import asyncio
 from sqlalchemy import select
-from app.db.session import SessionLocal
+from app.db.session import SessionLocal, engine
+from app.db.base import Base
+from app.models import domain  # noqa: F401
 from app.models import Customer,Order,Transaction
 SCENARIOS=[
 ("TXN-10021","CREDIT_CARD",2000,"DEBITED","SUCCESS","FAILED","PAYMENT_FAILED","Merchant confirmation failed after successful gateway processing."),
@@ -15,6 +17,8 @@ SCENARIOS=[
 ("TXN-10039","CREDIT_CARD",1300,"DEBITED","SUCCESS","SUCCESS","REFUNDED","Refund completed."),
 ]
 async def seed():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     async with SessionLocal() as db:
         if (await db.execute(select(Transaction))).scalars().first(): return
         for i in range(1,31):
