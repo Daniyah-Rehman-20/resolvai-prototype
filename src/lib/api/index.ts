@@ -9,7 +9,11 @@ import type {
   Transaction,
 } from "@/lib/types";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE = (/^https?:\/\//i.test(RAW_API_BASE)
+  ? RAW_API_BASE
+  : `https://${RAW_API_BASE}`
+).replace(/\/$/, "");
 const SETTINGS_KEY = "payresolve-settings-v1";
 const DEMO_TOKEN = process.env.NEXT_PUBLIC_DEMO_TOKEN || "payresolve-demo-token";
 const DEMO_ROLE = process.env.NEXT_PUBLIC_DEMO_ROLE || "admin";
