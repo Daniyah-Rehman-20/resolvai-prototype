@@ -1,4 +1,5 @@
 import uuid
+import random
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -112,6 +113,24 @@ async def list_transactions(
         search, payment_method, status, page_size, (page - 1) * page_size
     )
     return [to_frontend(x) for x in rows]
+
+@router.post("/generate", status_code=201)
+async def generate_transaction(
+    db: AsyncSession = Depends(get_db),
+    principal: Principal = Depends(require("analyst")),
+):
+    token = uuid.uuid4().hex[:6].upper()
+    payment_method = random.choice(["UPI", "CREDIT_CARD", "DEBIT_CARD"])
+    amount = float(random.choice([499, 799, 999, 1299, 1499, 1999, 2499, 3499, 4999]))
+    body = TransactionIngest(
+        customer_name=f"Customer {token}",
+        customer_email=f"customer-{token.lower()}@payresolve.local",
+        payment_method=payment_method,
+        amount=amount,
+        scenario="PENDING",
+        source_system="PAYMENT_EVENT_STREAM",
+    )
+    return await ingest_transaction(body, db, principal)
 
 @router.post("", status_code=201)
 async def ingest_transaction(
