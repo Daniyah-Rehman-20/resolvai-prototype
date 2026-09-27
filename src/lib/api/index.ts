@@ -103,6 +103,12 @@ export async function getTransactions() {
   return api<Transaction[]>("/transactions?page_size=100");
 }
 
+export async function generateIncomingTransaction() {
+  return api<Transaction>("/transactions/generate", {
+    method: "POST",
+  });
+}
+
 export async function createTransaction(input: {
   customer_name: string;
   payment_method: string;
