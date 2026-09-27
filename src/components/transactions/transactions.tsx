@@ -21,7 +21,7 @@ import {
   MoreLink,
 } from "@/components/common/ui";
 import { dateTime, label, money } from "@/lib/utils";
-import { IngestTransactionPanel, PaymentEventPanel } from "@/components/transactions/ingest";
+import { IngestTransactionPanel } from "@/components/transactions/ingest";
 export function Transactions({ initialQuery = "" }: { initialQuery?: string }) {
   const { data } = useWorkspace();
   const [query, setQuery] = useState(initialQuery);
@@ -63,7 +63,7 @@ export function Transactions({ initialQuery = "" }: { initialQuery?: string }) {
       <PageTitle
         eyebrow="PAYMENT RECORDS"
         title="Transactions"
-        description="Trace every payment from the first debit to the final outcome."
+        description="Run a real payment problem or inspect transactions received from upstream systems."
       >
         <span className="date-pill">
           {data.transactions.length} transactions
@@ -287,7 +287,17 @@ export function TransactionDetail({ id }: { id: string }) {
     );
   const investigation = data.investigations.find((i) => i.transactionId === id);
   const events = data.audit.filter((a) => a.transactionId === id);
-  const mismatch = !["SUCCESS", "REFUNDED"].includes(tx.status);
+  const mismatch =
+    tx.bank === "DEBITED" &&
+    tx.gateway === "SUCCESS" &&
+    tx.merchant === "FAILED";
+  const pendingState = tx.status === "PENDING";
+  const duplicate = tx.issue.toLowerCase().includes("duplicate");
+  const needsAttention =
+    mismatch ||
+    pendingState ||
+    duplicate ||
+    !["SUCCESS", "REFUNDED"].includes(tx.status);
   const policy = data.documents.find(
     (p) =>
       p.id ===
@@ -344,31 +354,42 @@ export function TransactionDetail({ id }: { id: string }) {
       </div>
       {tab === "Overview" && (
         <div className="grid-two detail-grid">
-          <PaymentEventPanel transaction={tx} />
           <Panel
             title="Payment state"
             subtitle="Compare evidence across the payment lifecycle"
           >
             <div
-              className={`state-notice ${mismatch ? "warning" : "positive"}`}
+              className={`state-notice ${needsAttention ? "warning" : "positive"}`}
             >
-              {mismatch ? (
+              {needsAttention ? (
                 <AlertTriangle size={18} />
               ) : (
                 <CheckCircle2 size={18} />
               )}
               <div>
                 <strong>
-                  {mismatch
-                    ? "Payment states need reconciliation"
-                    : "Recorded outcome is consistent"}
+                  {duplicate
+                    ? "Possible duplicate charge detected"
+                    : mismatch
+                      ? "Payment states need reconciliation"
+                      : pendingState
+                        ? "Payment is still awaiting confirmation"
+                        : needsAttention
+                          ? "Payment requires operator review"
+                          : "Recorded outcome is consistent"}
                 </strong>
                 <p>
-                  {tx.method === "CASH"
-                    ? "Cash records use collection and order evidence; bank and gateway are not applicable."
+                  {duplicate
+                    ? "More than one successful charge is associated with the same order."
                     : mismatch
-                      ? "A bank debit does not establish that an order was confirmed."
-                      : "No outstanding mismatch is recorded for this transaction."}
+                      ? "The bank and gateway succeeded, but the merchant did not confirm the payment."
+                      : pendingState
+                        ? "No final confirmation has arrived yet, so an early refund could create a loss."
+                        : tx.method === "CASH"
+                          ? "Cash records use collection and order evidence; bank and gateway are not applicable."
+                          : needsAttention
+                            ? tx.issue
+                            : "No outstanding mismatch is recorded for this transaction."}
                 </p>
               </div>
             </div>
@@ -442,7 +463,11 @@ export function TransactionDetail({ id }: { id: string }) {
                   <p>{label(investigation.recommendation)}</p>
                 </div>
                 <p className="subtle">{investigation.uncertainty}</p>
-                <MoreLink href="/approvals">Review proposed actions</MoreLink>
+                {investigation.requiresApproval ? (
+                  <MoreLink href="/approvals">Review required approval</MoreLink>
+                ) : (
+                  <MoreLink href="/knowledge">View supporting policy</MoreLink>
+                )}
               </>
             ) : (
               <Empty
