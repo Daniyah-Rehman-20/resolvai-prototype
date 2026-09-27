@@ -103,6 +103,36 @@ export async function getTransactions() {
   return api<Transaction[]>("/transactions?page_size=100");
 }
 
+export async function createTransaction(input: {
+  customer_name: string;
+  payment_method: string;
+  amount: number;
+  scenario: string;
+  source_system?: string;
+}) {
+  return api<Transaction>("/transactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function pushPaymentEvent(
+  transactionId: string,
+  source: string,
+  status: string,
+  issue?: string,
+) {
+  return api<Transaction>(
+    `/transactions/${encodeURIComponent(transactionId)}/events`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source, status, issue }),
+    },
+  );
+}
+
 export async function getTransaction(transactionId: string) {
   return api<Transaction>(`/transactions/${encodeURIComponent(transactionId)}`);
 }
