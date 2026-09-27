@@ -14,11 +14,7 @@ import {
   ArrowLeftRight,
   Sparkles,
   ShieldCheck,
-  Flag,
   BookOpen,
-  Activity,
-  ChartNoAxesCombined,
-  Settings,
   Search,
   Bell,
   ChevronDown,
@@ -45,11 +41,7 @@ const nav = [
   ["Transactions", "/transactions", ArrowLeftRight],
   ["AI Investigator", "/investigator", Sparkles],
   ["Approval Queue", "/approvals", ShieldCheck],
-  ["Disputes", "/disputes", Flag],
   ["Knowledge Base", "/knowledge", BookOpen],
-  ["Agent Activity", "/agents", Activity],
-  ["Analytics", "/analytics", ChartNoAxesCombined],
-  ["Settings", "/settings", Settings],
 ] as const;
 export function Workspace({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData | null>(null);
@@ -240,7 +232,7 @@ export function Workspace({ children }: { children: ReactNode }) {
                   <p>
                     {data?.settings.notifications
                       ? `${pending} approvals need a human review.`
-                      : "Notifications are paused in Settings."}
+                      : "Notifications are disabled."}
                   </p>
                   <Link
                     href="/approvals"
@@ -268,9 +260,7 @@ export function Workspace({ children }: { children: ReactNode }) {
                 <div className="popover">
                   <strong>Operations reviewer</strong>
                   <p>Investigation and approval access</p>
-                  <Link href="/settings" onClick={() => setProfile(false)}>
-                    Workspace settings →
-                  </Link>
+                  <p>Core workflow: investigate evidence, review policy, and approve sensitive actions.</p>
                 </div>
               )}
             </div>
