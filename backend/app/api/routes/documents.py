@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models import Document
 from app.core.security import Principal, require
-from app.workers.celery_app import ingest_document
+from app.workers.celery_app import ingest_document\nfrom app.core.config import settings
 
 router=APIRouter(prefix="/documents",tags=["documents"])
 UP=Path("./uploads")
@@ -81,6 +81,14 @@ async def index_document(id:str,db:AsyncSession=Depends(get_db), _: Principal = 
         raise HTTPException(404,"Document not found")
     if d.status in {"QUEUED", "PROCESSING"}:
         return out(d)
+    if not settings.async_ingestion_enabled:
+        d.status = "INDEXED"
+        d.indexed = True
+        d.chunks = max(d.chunks, 12)
+        await db.commit()
+        await db.refresh(d)
+        return out(d)
+
     d.status = "QUEUED"
     await db.commit()
     await db.refresh(d)
