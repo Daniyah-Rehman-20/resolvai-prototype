@@ -1,7 +1,7 @@
 import uuid
-import random
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import Principal, require
@@ -9,18 +9,16 @@ from app.db.session import get_db
 from app.models import AuditEvent, Customer, Order, Transaction
 from app.repositories.transactions import TransactionRepository
 from app.schemas.domain import PaymentEventIngest, TransactionIngest
+from app.services.investigation import investigate
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
+
 
 def to_frontend(tx):
     return {
         "id": tx.transaction_id,
         "orderId": tx.order_id,
-        "customer": {
-            "id": tx.customer.id,
-            "name": tx.customer.name,
-            "email": tx.customer.email,
-        },
+        "customer": {"id": tx.customer.id, "name": tx.customer.name, "email": tx.customer.email},
         "method": tx.payment_method,
         "amount": tx.amount,
         "status": tx.overall_status,
@@ -33,56 +31,38 @@ def to_frontend(tx):
         "maskedInstrument": tx.masked_payment_reference,
     }
 
+
 def scenario_values(scenario: str | None):
     scenarios = {
         "PENDING": {
-            "bank": "PENDING",
-            "gateway": "PENDING",
-            "merchant": "PENDING",
-            "overall": "PENDING",
-            "order": "PENDING",
+            "bank": "PENDING", "gateway": "PENDING", "merchant": "PENDING",
+            "overall": "PENDING", "order": "PENDING",
             "issue": "Payment initiated; final confirmation is pending.",
         },
         "FAILED": {
-            "bank": "DEBITED",
-            "gateway": "SUCCESS",
-            "merchant": "FAILED",
-            "overall": "PAYMENT_FAILED",
-            "order": "PAYMENT_FAILED",
+            "bank": "DEBITED", "gateway": "SUCCESS", "merchant": "FAILED",
+            "overall": "PAYMENT_FAILED", "order": "PAYMENT_FAILED",
             "issue": "Bank debit and gateway success were recorded, but merchant confirmation failed.",
         },
         "SUCCESS": {
-            "bank": "DEBITED",
-            "gateway": "SUCCESS",
-            "merchant": "SUCCESS",
-            "overall": "SUCCESS",
-            "order": "PAYMENT_CONFIRMED",
+            "bank": "DEBITED", "gateway": "SUCCESS", "merchant": "SUCCESS",
+            "overall": "SUCCESS", "order": "PAYMENT_CONFIRMED",
             "issue": "Payment completed successfully.",
         },
         "DISPUTED": {
-            "bank": "DEBITED",
-            "gateway": "SUCCESS",
-            "merchant": "SUCCESS",
-            "overall": "DISPUTED",
-            "order": "PAYMENT_CONFIRMED",
+            "bank": "DEBITED", "gateway": "SUCCESS", "merchant": "SUCCESS",
+            "overall": "DISPUTED", "order": "PAYMENT_CONFIRMED",
             "issue": "Customer dispute was recorded for the completed payment.",
         },
     }
     return scenarios.get(scenario or "PENDING", scenarios["PENDING"])
 
+
 def derive_overall(tx: Transaction) -> str:
-    states = {
-        tx.bank_status.upper(),
-        tx.gateway_status.upper(),
-        tx.merchant_status.upper(),
-        tx.order.status.upper(),
-    }
+    states = {tx.bank_status.upper(), tx.gateway_status.upper(), tx.merchant_status.upper(), tx.order.status.upper()}
     if "DISPUTED" in states:
         return "DISPUTED"
-    if tx.merchant_status.upper() == "FAILED" or tx.order.status.upper() in {
-        "FAILED",
-        "PAYMENT_FAILED",
-    }:
+    if tx.merchant_status.upper() == "FAILED" or tx.order.status.upper() in {"FAILED", "PAYMENT_FAILED"}:
         if tx.bank_status.upper() == "DEBITED" and tx.gateway_status.upper() == "SUCCESS":
             return "RECONCILIATION_REQUIRED"
         return "PAYMENT_FAILED"
@@ -99,6 +79,7 @@ def derive_overall(tx: Transaction) -> str:
         return "PENDING"
     return tx.overall_status
 
+
 @router.get("")
 async def list_transactions(
     search: str | None = None,
@@ -109,28 +90,9 @@ async def list_transactions(
     db: AsyncSession = Depends(get_db),
     _: Principal = Depends(require("viewer")),
 ):
-    rows = await TransactionRepository(db).list(
-        search, payment_method, status, page_size, (page - 1) * page_size
-    )
+    rows = await TransactionRepository(db).list(search, payment_method, status, page_size, (page - 1) * page_size)
     return [to_frontend(x) for x in rows]
 
-@router.post("/generate", status_code=201)
-async def generate_transaction(
-    db: AsyncSession = Depends(get_db),
-    principal: Principal = Depends(require("analyst")),
-):
-    token = uuid.uuid4().hex[:6].upper()
-    payment_method = random.choice(["UPI", "CREDIT_CARD", "DEBIT_CARD"])
-    amount = float(random.choice([499, 799, 999, 1299, 1499, 1999, 2499, 3499, 4999]))
-    body = TransactionIngest(
-        customer_name=f"Customer {token}",
-        customer_email=f"customer-{token.lower()}@payresolve.local",
-        payment_method=payment_method,
-        amount=amount,
-        scenario="PENDING",
-        source_system="PAYMENT_EVENT_STREAM",
-    )
-    return await ingest_transaction(body, db, principal)
 
 @router.post("", status_code=201)
 async def ingest_transaction(
@@ -139,22 +101,15 @@ async def ingest_transaction(
     principal: Principal = Depends(require("analyst")),
 ):
     txid = body.transaction_id or f"TXN-{uuid.uuid4().hex[:8].upper()}"
-    existing = await db.execute(
-        select(Transaction).where(Transaction.transaction_id == txid)
-    )
+    existing = await db.execute(select(Transaction).where(Transaction.transaction_id == txid))
     if existing.scalar_one_or_none():
         raise HTTPException(409, f"Transaction {txid} already exists")
 
     customer = None
     if body.customer_id:
-        customer = (
-            await db.execute(select(Customer).where(Customer.id == body.customer_id))
-        ).scalar_one_or_none()
+        customer = (await db.execute(select(Customer).where(Customer.id == body.customer_id))).scalar_one_or_none()
     if customer is None and body.customer_email:
-        customer = (
-            await db.execute(select(Customer).where(Customer.email == body.customer_email))
-        ).scalar_one_or_none()
-
+        customer = (await db.execute(select(Customer).where(Customer.email == body.customer_email))).scalar_one_or_none()
     if customer is None:
         customer_id = body.customer_id or f"CUS-{uuid.uuid4().hex[:8].upper()}"
         customer = Customer(
@@ -166,15 +121,8 @@ async def ingest_transaction(
 
     values = scenario_values(body.scenario)
     order_id = body.order_id or f"ORD-{uuid.uuid4().hex[:8].upper()}"
-    existing_order = (
-        await db.execute(select(Order).where(Order.id == order_id))
-    ).scalar_one_or_none()
-    order = existing_order or Order(
-        id=order_id,
-        customer_id=customer.id,
-        status=values["order"],
-        amount=body.amount,
-    )
+    existing_order = (await db.execute(select(Order).where(Order.id == order_id))).scalar_one_or_none()
+    order = existing_order or Order(id=order_id, customer_id=customer.id, status=values["order"], amount=body.amount)
     if existing_order is None:
         db.add(order)
 
@@ -196,24 +144,23 @@ async def ingest_transaction(
         order=order,
     )
     db.add(tx)
-    db.add(
-        AuditEvent(
-            id=f"AUD-{uuid.uuid4().hex[:8]}",
-            actor=principal.subject,
-            action="TRANSACTION_INGESTED",
-            resource_type="transaction",
-            resource_id=txid,
-            metadata_json={
-                "transaction_id": txid,
-                "source_system": body.source_system,
-                "note": f"Transaction ingested from {body.source_system}",
-            },
-            correlation_id="",
-        )
-    )
+    db.add(AuditEvent(
+        id=f"AUD-{uuid.uuid4().hex[:8]}",
+        actor=principal.subject,
+        action="TRANSACTION_INGESTED",
+        resource_type="transaction",
+        resource_id=txid,
+        metadata_json={
+            "transaction_id": txid,
+            "source_system": body.source_system,
+            "note": f"Transaction ingested from {body.source_system}",
+        },
+        correlation_id="",
+    ))
     await db.commit()
     await db.refresh(tx)
     return to_frontend(tx)
+
 
 @router.post("/{transaction_id}/events")
 async def ingest_payment_event(
@@ -239,25 +186,153 @@ async def ingest_payment_event(
         tx.issue = body.issue
     tx.overall_status = derive_overall(tx)
 
-    db.add(
-        AuditEvent(
-            id=f"AUD-{uuid.uuid4().hex[:8]}",
-            actor=principal.subject,
-            action="PAYMENT_EVENT_RECEIVED",
-            resource_type="transaction",
-            resource_id=transaction_id,
-            metadata_json={
-                "transaction_id": transaction_id,
-                "source": source,
-                "status": status,
-                "note": f"{source} reported {status}",
-            },
-            correlation_id="",
-        )
-    )
+    db.add(AuditEvent(
+        id=f"AUD-{uuid.uuid4().hex[:8]}",
+        actor=principal.subject,
+        action="PAYMENT_EVENT_RECEIVED",
+        resource_type="transaction",
+        resource_id=transaction_id,
+        metadata_json={
+            "transaction_id": transaction_id,
+            "source": source,
+            "status": status,
+            "note": f"{source} reported {status}",
+        },
+        correlation_id="",
+    ))
     await db.commit()
     await db.refresh(tx)
     return to_frontend(tx)
+
+
+@router.post("/use-cases/{use_case}", status_code=201)
+async def run_use_case(
+    use_case: str,
+    db: AsyncSession = Depends(get_db),
+    principal: Principal = Depends(require("analyst")),
+):
+    token = uuid.uuid4().hex[:6].upper()
+
+    if use_case == "charged-order-failed":
+        created = await ingest_transaction(
+            TransactionIngest(
+                customer_name=f"Shopper {token}",
+                customer_email=f"shopper-{token.lower()}@payresolve.local",
+                payment_method="UPI",
+                amount=2499,
+                scenario="PENDING",
+                source_system="PAYMENT_GATEWAY_WEBHOOK",
+            ),
+            db,
+            principal,
+        )
+        txid = created["id"]
+        for source, status, issue in [
+            ("BANK", "DEBITED", "Bank confirms customer debit."),
+            ("GATEWAY", "SUCCESS", "Gateway confirms successful processing."),
+            ("MERCHANT", "FAILED", "Merchant did not confirm the payment."),
+            ("ORDER", "PAYMENT_FAILED", "Order service marked the payment as failed."),
+        ]:
+            await ingest_payment_event(
+                txid,
+                PaymentEventIngest(source=source, status=status, issue=issue),
+                db,
+                principal,
+            )
+        question = "Money was deducted and the gateway succeeded, but the order failed. What should payment operations do?"
+        message = "Customer charged but order failed"
+
+    elif use_case == "payment-pending":
+        created = await ingest_transaction(
+            TransactionIngest(
+                customer_name=f"Shopper {token}",
+                customer_email=f"shopper-{token.lower()}@payresolve.local",
+                payment_method="UPI",
+                amount=1299,
+                scenario="PENDING",
+                source_system="PAYMENT_GATEWAY_WEBHOOK",
+            ),
+            db,
+            principal,
+        )
+        txid = created["id"]
+        question = "What should operations do with this UPI payment that is still pending?"
+        message = "Payment stuck pending"
+
+    elif use_case == "duplicate-charge":
+        first = await ingest_transaction(
+            TransactionIngest(
+                customer_name=f"Shopper {token}",
+                customer_email=f"shopper-{token.lower()}@payresolve.local",
+                payment_method="CREDIT_CARD",
+                amount=7499,
+                scenario="SUCCESS",
+                source_system="PAYMENT_GATEWAY_WEBHOOK",
+            ),
+            db,
+            principal,
+        )
+        second = await ingest_transaction(
+            TransactionIngest(
+                order_id=first["orderId"],
+                customer_id=first["customer"]["id"],
+                customer_name=first["customer"]["name"],
+                payment_method="CREDIT_CARD",
+                amount=7499,
+                scenario="SUCCESS",
+                issue=(
+                    f"Possible duplicate payment detected: {first['id']} and this transaction "
+                    f"both succeeded for order {first['orderId']}."
+                ),
+                source_system="DUPLICATE_DETECTION",
+            ),
+            db,
+            principal,
+        )
+        txid = second["id"]
+        db.add(AuditEvent(
+            id=f"AUD-{uuid.uuid4().hex[:8]}",
+            actor="system",
+            action="DUPLICATE_PAYMENT_DETECTED",
+            resource_type="transaction",
+            resource_id=txid,
+            metadata_json={
+                "transaction_id": txid,
+                "peer_transaction_id": first["id"],
+                "order_id": first["orderId"],
+                "note": f"Two successful charges detected for {first['orderId']}.",
+            },
+            correlation_id="",
+        ))
+        await db.commit()
+        question = "The same order appears to have been charged twice. Should the duplicate payment be refunded?"
+        message = "Duplicate customer charge"
+
+    else:
+        raise HTTPException(
+            404,
+            "Unknown use case. Choose charged-order-failed, payment-pending, or duplicate-charge.",
+        )
+
+    inv = await investigate(db, txid, question)
+    if use_case == "duplicate-charge":
+        inv.evidence = [
+            *inv.evidence,
+            "Duplicate detector found two successful transactions for the same order.",
+        ]
+        await db.commit()
+        await db.refresh(inv)
+
+    tx = await TransactionRepository(db).get(txid)
+    return {
+        "useCase": use_case,
+        "message": message,
+        "transaction": to_frontend(tx),
+        "investigationId": inv.id,
+        "recommendation": inv.recommended_action,
+        "requiresApproval": inv.approval_required,
+    }
+
 
 @router.get("/{transaction_id}")
 async def get_transaction(
