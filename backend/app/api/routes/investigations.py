@@ -1,35 +1,67 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import Principal, require
 from app.db.session import get_db
 from app.models import Investigation
 from app.schemas.domain import InvestigationCreate
 from app.services.investigation import investigate
-from app.core.security import Principal, require
 
 router = APIRouter(prefix="/investigations", tags=["investigations"])
 
 def out(i):
-    return {"id":i.id,"transactionId":i.transaction_id,"question":i.question,"status":i.status,"steps":i.agent_steps,"summary":i.summary,"cause":i.likely_cause,"evidence":i.evidence,"policyId":i.sources[0]["document"] if i.sources else None,"recommendation":i.recommended_action,"uncertainty":"Result grounded in retrieved policy evidence; sensitive actions are approval-gated.","requiresApproval":i.approval_required,"createdAt":i.created_at,"duration":i.duration_ms,"sources":i.sources}
+    return {
+        "id": i.id,
+        "transactionId": i.transaction_id,
+        "question": i.question,
+        "status": i.status,
+        "steps": i.agent_steps,
+        "summary": i.summary,
+        "cause": i.likely_cause,
+        "evidence": i.evidence,
+        "policyId": i.sources[0]["document"] if i.sources else None,
+        "recommendation": i.recommended_action,
+        "uncertainty": (
+            f"Grounded in {len(i.sources)} retrieved policy chunks and the recorded transaction state. "
+            "The explanation can change with the question; sensitive actions remain constrained by backend rules."
+        ),
+        "requiresApproval": i.approval_required,
+        "createdAt": i.created_at,
+        "duration": i.duration_ms,
+        "sources": i.sources,
+    }
 
 @router.post("", status_code=201)
 async def create(
-    body: InvestigationCreate, request: Request, db: AsyncSession = Depends(get_db),
+    body: InvestigationCreate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
     _: Principal = Depends(require("analyst")),
 ):
-    return out(await investigate(db, body.transaction_id, body.question, request.state.correlation_id))
+    return out(
+        await investigate(
+            db,
+            body.transaction_id,
+            body.question,
+            request.state.correlation_id,
+        )
+    )
 
 @router.get("")
 async def list_all(
     db: AsyncSession = Depends(get_db),
     _: Principal = Depends(require("viewer")),
 ):
-    r = await db.execute(select(Investigation).order_by(Investigation.created_at.desc()))
+    r = await db.execute(
+        select(Investigation).order_by(Investigation.created_at.desc())
+    )
     return [out(x) for x in r.scalars().all()]
 
 @router.get("/{id}")
 async def get_one(
-    id: str, db: AsyncSession = Depends(get_db),
+    id: str,
+    db: AsyncSession = Depends(get_db),
     _: Principal = Depends(require("viewer")),
 ):
     r = await db.execute(select(Investigation).where(Investigation.id == id))

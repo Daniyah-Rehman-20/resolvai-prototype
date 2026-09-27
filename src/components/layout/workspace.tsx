@@ -73,6 +73,13 @@ export function Workspace({ children }: { children: ReactNode }) {
         document.documentElement.dataset.theme = next.settings.theme;
       })
       .catch((e) => setError(e.message));
+
+    const poll = setInterval(() => {
+      getWorkspace()
+        .then((next) => setData(next))
+        .catch(() => undefined);
+    }, 15000);
+    return () => clearInterval(poll);
   }, []);
   useEffect(() => {
     if (!toast) return;

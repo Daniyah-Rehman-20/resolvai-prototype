@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "payresolve-ai-backend"
-version = "1.0.0"
+version = "1.1.0"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.116",
@@ -17,18 +17,22 @@ dependencies = [
   "aiosqlite>=0.21",
   "httpx>=0.28",
   "redis>=6.4",
-  "celery>=5.5",
-  "qdrant-client>=1.15",
-  "sentence-transformers>=5.1",
   "rank-bm25>=0.2.2",
   "langgraph>=0.6",
   "prometheus-client>=0.22",
-  "python-multipart>=0.0.20",
-  "pypdf>=6.0",
-  "python-docx>=1.2"
+  "python-multipart>=0.0.20"
 ]
 
 [project.optional-dependencies]
+ai = [
+  "qdrant-client>=1.15",
+  "sentence-transformers>=5.1"
+]
+worker = [
+  "celery>=5.5",
+  "pypdf>=6.0",
+  "python-docx>=1.2"
+]
 dev = [
   "pytest>=8.4",
   "pytest-asyncio>=1.1",
@@ -49,5 +53,4 @@ pythonpath = ["."]
 line-length = 100
 
 [tool.ruff.lint]
-# Fail CI on correctness errors first; formatting cleanup is tracked separately.
 select = ["E9", "F63", "F7", "F82"]

@@ -20,7 +20,7 @@ import {
   PageTitle,
   MoreLink,
 } from "@/components/common/ui";
-import { dateTime, label, money } from "@/lib/utils";
+import { dateTime, label, money } from "@/lib/utils";\nimport { IngestTransactionPanel, PaymentEventPanel } from "@/components/transactions/ingest";
 export function Transactions({ initialQuery = "" }: { initialQuery?: string }) {
   const { data } = useWorkspace();
   const [query, setQuery] = useState(initialQuery);
