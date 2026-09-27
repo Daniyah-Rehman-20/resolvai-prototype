@@ -2,35 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Activity, LoaderCircle, Plus } from "lucide-react";
+import { LoaderCircle, RadioTower } from "lucide-react";
 
 import { Panel, Badge } from "@/components/common/ui";
 import { useWorkspace } from "@/components/layout/workspace";
-import { createTransaction, pushPaymentEvent } from "@/lib/api";
+import { generateIncomingTransaction, pushPaymentEvent } from "@/lib/api";
 import type { Transaction } from "@/lib/types";
 
 export function IngestTransactionPanel() {
   const { refresh, notify } = useWorkspace();
-  const [name, setName] = useState("New Customer");
-  const [amount, setAmount] = useState("1499");
-  const [method, setMethod] = useState("UPI");
-  const [scenario, setScenario] = useState("PENDING");
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<Transaction | null>(null);
 
-  async function create() {
+  async function generate() {
     setBusy(true);
     try {
-      const tx = await createTransaction({
-        customer_name: name,
-        payment_method: method,
-        amount: Number(amount),
-        scenario,
-        source_system: "PAYMENT_EVENT_INGESTION",
-      });
+      const tx = await generateIncomingTransaction();
       setCreated(tx);
       await refresh();
-      notify(`${tx.id} entered the transaction pipeline.`);
+      notify(`${tx.id} received from the payment event stream.`);
     } finally {
       setBusy(false);
     }
@@ -38,51 +28,30 @@ export function IngestTransactionPanel() {
 
   return (
     <Panel
-      title="Payment event ingestion"
-      subtitle="Create a transaction exactly where an upstream payment system would enter PayResolve"
+      title="Incoming transaction stream"
+      subtitle="Receive a new payment record without manually entering customer or payment details"
     >
-      <div className="filters">
-        <input
-          aria-label="Customer name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Customer name"
-        />
-        <input
-          aria-label="Amount"
-          type="number"
-          min="1"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Amount"
-        />
-        <select
-          aria-label="Payment method"
-          value={method}
-          onChange={(e) => setMethod(e.target.value)}
-        >
-          <option value="UPI">UPI</option>
-          <option value="CREDIT_CARD">Credit card</option>
-          <option value="DEBIT_CARD">Debit card</option>
-        </select>
-        <select
-          aria-label="Initial payment state"
-          value={scenario}
-          onChange={(e) => setScenario(e.target.value)}
-        >
-          <option value="PENDING">Pending</option>
-          <option value="FAILED">Failed</option>
-          <option value="SUCCESS">Successful</option>
-          <option value="DISPUTED">Disputed</option>
-        </select>
-        <button className="button" disabled={busy || !Number(amount)} onClick={create}>
-          {busy ? <LoaderCircle className="spin" size={17} /> : <Plus size={17} />}
-          {busy ? "Ingesting…" : "Ingest transaction"}
+      <div className="review-banner">
+        <div className="banner-icon">
+          <RadioTower size={22} />
+        </div>
+        <div>
+          <strong>Automated transaction ingestion</strong>
+          <p>
+            PayResolve generates the transaction, customer, order, amount and
+            payment method as an upstream payment system would provide them.
+          </p>
+        </div>
+        <button className="button" disabled={busy} onClick={generate}>
+          {busy ? <LoaderCircle className="spin" size={17} /> : <RadioTower size={17} />}
+          {busy ? "Receiving…" : "Generate incoming transaction"}
         </button>
       </div>
       {created && (
         <p className="microcopy">
-          Created <strong>{created.id}</strong> · <Badge value={created.status} />{" "}
+          Received <strong>{created.id}</strong> · {created.customer.name} ·{" "}
+          ₹{created.amount.toLocaleString("en-IN")} · <Badge value={created.method} /> ·{" "}
+          <Badge value={created.status} />{" "}
           <Link className="text-link" href={`/transactions/${created.id}`}>
             Open transaction →
           </Link>
@@ -127,9 +96,7 @@ export function PaymentEventPanel({ transaction }: { transaction: Transaction })
             disabled={Boolean(busy)}
             onClick={() => apply(source, status, issue)}
           >
-            <span>
-              <Activity size={15} /> {source}
-            </span>
+            <span>{source}</span>
             <Badge value={status} />
           </button>
         ))}
