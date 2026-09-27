@@ -246,8 +246,10 @@ export function Investigator({ transaction = "" }: { transaction?: string }) {
                   <strong>{label(result.recommendation)}</strong>
                   <p>
                     {result.requiresApproval
-                      ? "Human approval is required before this payment action can proceed."
-                      : "No payment action has been proposed."}
+                      ? "Human approval is required before this sensitive payment action can proceed."
+                      : result.recommendation === "NO_ACTION"
+                        ? "The evidence is consistent; no operational action is needed."
+                        : "This is a safe operational recommendation and does not move customer funds."}
                   </p>
                   {result.requiresApproval && (
                     <Link href="/approvals" className="text-link">
