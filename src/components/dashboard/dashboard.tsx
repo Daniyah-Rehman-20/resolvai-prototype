@@ -8,9 +8,6 @@ import {
   Clock3,
   ShieldCheck,
   Sparkles,
-  Flag,
-  Timer,
-  Download,
 } from "lucide-react";
 import { useWorkspace } from "@/components/layout/workspace";
 import {
@@ -154,7 +151,7 @@ export function MethodBars({ transactions }: { transactions: Transaction[] }) {
   );
 }
 export function Dashboard() {
-  const { data, notify } = useWorkspace();
+  const { data } = useWorkspace();
   const tx = data.transactions;
   const completed = data.investigations.filter((i) => i.status === "completed");
   const resolved = completed.filter((i) => !i.requiresApproval);
@@ -180,9 +177,11 @@ export function Dashboard() {
       CheckCheck,
     ],
     [
-      "Failed payments",
-      tx.filter((t) => t.status === "FAILED").length,
-      "Require reconciliation",
+      "Payment exceptions",
+      tx.filter((t) =>
+        ["FAILED", "PAYMENT_FAILED", "RECONCILIATION_REQUIRED"].includes(t.status),
+      ).length,
+      "Need investigation or reconciliation",
       CircleAlert,
     ],
     [
@@ -191,12 +190,6 @@ export function Dashboard() {
       "Awaiting confirmation",
       Clock3,
     ],
-    [
-      "Open disputes",
-      data.disputes.filter((d) => d.status !== "RESOLVED").length,
-      "Active cases",
-      Flag,
-    ],
     ["Human approvals", waiting.length, "Ready for your review", ShieldCheck],
     [
       "AI-resolved cases",
@@ -204,32 +197,7 @@ export function Dashboard() {
       "Resolved · no action needed",
       Sparkles,
     ],
-    [
-      "Avg. resolution time",
-      resolved.length
-        ? (
-            resolved.reduce((s, i) => s + i.duration, 0) /
-            resolved.length /
-            1000
-          ).toFixed(1) + "s"
-        : "—",
-      "Auto-resolved cases only",
-      Timer,
-    ],
   ] as const;
-  function exportSummary() {
-    const content = [
-      "Metric,Value",
-      ...metrics.map(([name, value]) => `${name},${value}`),
-    ].join("\n");
-    const url = URL.createObjectURL(new Blob([content], { type: "text/csv" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "payresolve-summary.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    notify("Summary exported.");
-  }
   return (
     <>
       <PageTitle
@@ -237,11 +205,7 @@ export function Dashboard() {
         title="Dashboard"
         description="A clear view of your payments. A faster path to resolution."
       >
-        <span className="date-pill">15–21 Sep 2026 · transaction cohort</span>
-        <button className="button secondary" onClick={exportSummary}>
-          <Download size={16} />
-          Export
-        </button>
+        <span className="date-pill">Live payment operations</span>
       </PageTitle>
       <div className="review-banner">
         <div className="banner-icon">
@@ -260,6 +224,26 @@ export function Dashboard() {
           <ArrowUpRight size={16} />
         </Link>
       </div>
+      <Panel
+        title="What PayResolve solves"
+        subtitle="Three payment exceptions that normally require an operations team to inspect several systems"
+        action={<MoreLink href="/transactions">Run a use case</MoreLink>}
+      >
+        <div className="issue-grid">
+          <div>
+            <span>Money deducted, order failed</span>
+            <strong>RECONCILE</strong>
+          </div>
+          <div>
+            <span>Payment stuck pending</span>
+            <strong>WAIT & RECHECK</strong>
+          </div>
+          <div>
+            <span>Customer charged twice</span>
+            <strong>HUMAN-APPROVED REFUND</strong>
+          </div>
+        </div>
+      </Panel>
       <div className="metrics">
         {metrics.map(([name, value, detail, Icon]) => (
           <div className="metric" key={name}>
