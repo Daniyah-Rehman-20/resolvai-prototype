@@ -24,7 +24,7 @@ def out(d):
         "status":status,
         "chunks":d.chunks,
         "indexed":d.indexed,
-        "content":"Indexed synthetic/demo knowledge document.",
+        "content":"Indexed knowledge document.",
     }
 
 def local_policy_out(path:Path):
