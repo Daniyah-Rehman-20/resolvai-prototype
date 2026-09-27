@@ -69,6 +69,7 @@ export function Transactions({ initialQuery = "" }: { initialQuery?: string }) {
           {data.transactions.length} transactions
         </span>
       </PageTitle>
+      <IngestTransactionPanel />
       <section className="panel">
         <div className="filters">
           <div className="input-icon">
@@ -343,6 +344,7 @@ export function TransactionDetail({ id }: { id: string }) {
       </div>
       {tab === "Overview" && (
         <div className="grid-two detail-grid">
+          <PaymentEventPanel transaction={tx} />
           <Panel
             title="Payment state"
             subtitle="Compare evidence across the payment lifecycle"
