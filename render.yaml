@@ -26,7 +26,7 @@ services:
         fromService:
           name: payresolve-web
           type: web
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
       - key: AUTH_DEMO_TOKEN
         generateValue: true
       - key: SEMANTIC_RAG_ENABLED
@@ -48,7 +48,7 @@ services:
         fromService:
           name: payresolve-api
           type: web
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
       - key: NEXT_PUBLIC_DEMO_TOKEN
         fromService:
           name: payresolve-api
