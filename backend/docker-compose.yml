@@ -9,7 +9,7 @@ services:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
     environment:
-      DATABASE_URL: postgresql+asyncpg://payresolve:payresolve@postgres:5432/payresolve
+      DATABASE_URL: postgresql+asyncpg://payresolve:payresolve@postgres:5432/payresolve\n      ASYNC_INGESTION_ENABLED: "true"
 
   postgres:
     image: postgres:17.6-alpine
