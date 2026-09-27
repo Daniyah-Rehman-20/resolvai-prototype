@@ -92,5 +92,5 @@ async def index_document(id:str,db:AsyncSession=Depends(get_db), _: Principal = 
     d.status = "QUEUED"
     await db.commit()
     await db.refresh(d)
-    ingest_document.delay(d.id)
+    from app.workers.celery_app import ingest_document\n    ingest_document.delay(d.id)
     return out(d)
