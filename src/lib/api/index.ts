@@ -103,40 +103,19 @@ export async function getTransactions() {
   return api<Transaction[]>("/transactions?page_size=100");
 }
 
-export async function generateIncomingTransaction() {
-  return api<Transaction>("/transactions/generate", {
-    method: "POST",
-  });
-}
-
-export async function createTransaction(input: {
-  customer_name: string;
-  payment_method: string;
-  amount: number;
-  scenario: string;
-  source_system?: string;
-}) {
-  return api<Transaction>("/transactions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function pushPaymentEvent(
-  transactionId: string,
-  source: string,
-  status: string,
-  issue?: string,
+export async function runPaymentUseCase(
+  useCase: "charged-order-failed" | "payment-pending" | "duplicate-charge",
 ) {
-  return api<Transaction>(
-    `/transactions/${encodeURIComponent(transactionId)}/events`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source, status, issue }),
-    },
-  );
+  return api<{
+    useCase: string;
+    message: string;
+    transaction: Transaction;
+    investigationId: string;
+    recommendation: string;
+    requiresApproval: boolean;
+  }>(`/transactions/use-cases/${encodeURIComponent(useCase)}`, {
+    method: "POST",
+  });
 }
 
 export async function getTransaction(transactionId: string) {
