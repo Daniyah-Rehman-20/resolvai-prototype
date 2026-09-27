@@ -20,16 +20,37 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     reranker_model: str = "BAAI/bge-reranker-base"
     semantic_rag_enabled: bool = False
+    async_ingestion_enabled: bool = False
     cors_origins: list[str] = ["http://localhost:3000"]
     rate_limit_requests: int = 60
     rate_limit_window_seconds: int = 60
     auth_demo_token: str = "payresolve-demo-token"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value):
+        if isinstance(value, str) and value.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + value[len("postgresql://"):]
+        return value
+
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def parse_origins(cls, v):
-        if isinstance(v, str): return [x.strip() for x in v.split(",") if x.strip()]
-        return v
+    def parse_origins(cls, value):
+        if isinstance(value, str):
+            origins = [x.strip() for x in value.split(",") if x.strip()]
+        else:
+            origins = value
+        if isinstance(origins, list):
+            return [
+                origin
+                if origin == "*" or origin.startswith(("http://", "https://"))
+                else f"https://{origin}"
+                for origin in origins
+            ]
+        return origins
 
 @lru_cache
-def get_settings() -> Settings: return Settings()
+def get_settings() -> Settings:
+    return Settings()
+
 settings = get_settings()
