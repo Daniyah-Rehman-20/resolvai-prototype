@@ -8,9 +8,9 @@ from app.core.constants import Action
 
 def cause_for(action: Action) -> str:
     if action == Action.RECONCILE:
-        return "Bank debit and gateway success conflict with merchant failure; reconciliation is required before any simulated refund."
+        return "Bank debit and gateway success conflict with merchant failure; reconciliation is required before any refund recommendation."
     if action == Action.WAIT_AND_RECHECK:
-        return "The UPI transaction is still pending in the synthetic gateway state."
+        return "The UPI transaction is still pending in the recorded gateway state."
     if action == Action.SIMULATED_REFUND:
         return "Multiple payment records indicate a possible duplicate charge for the same order."
     return "The recorded payment states require operator review."

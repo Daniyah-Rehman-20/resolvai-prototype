@@ -22,7 +22,7 @@ async def seed():
     async with SessionLocal() as db:
         if (await db.execute(select(Transaction))).scalars().first(): return
         for i in range(1,31):
-            cid=f"CUS-{i:03d}"; oid=f"ORD-{1000+i}"; db.add(Customer(id=cid,name=f"Demo Customer {i}",email=f"customer{i}@example.test")); db.add(Order(id=oid,customer_id=cid,status="PAYMENT_CONFIRMED",amount=100+i*50))
+            cid=f"CUS-{i:03d}"; oid=f"ORD-{1000+i}"; db.add(Customer(id=cid,name=f"Customer {i}",email=f"customer{i}@example.test")); db.add(Order(id=oid,customer_id=cid,status="PAYMENT_CONFIRMED",amount=100+i*50))
         await db.flush()
         for i in range(30):
             if i < len(SCENARIOS): txid,method,amount,bank,gateway,merchant,status,issue=SCENARIOS[i]
@@ -30,7 +30,7 @@ async def seed():
                 txid=f"TXN-{10040+i}"; method="UPI" if i%2 else "CREDIT_CARD"; amount=500+i*75; bank=gateway=merchant=status="SUCCESS"; issue="Successful synthetic payment."
             cid=f"CUS-{i+1:03d}"; oid=f"ORD-{1001+i}"
             order=(await db.execute(select(Order).where(Order.id==oid))).scalar_one(); order.status="PAYMENT_FAILED" if status in {"FAILED","PAYMENT_FAILED","RECONCILIATION_REQUIRED"} else ("PENDING" if status=="PENDING" else "PAYMENT_CONFIRMED")
-            db.add(Transaction(transaction_id=txid,order_id=oid,customer_id=cid,payment_method=method,amount=amount,currency="INR",bank_status=bank,gateway_status=gateway,merchant_status=merchant,overall_status=status,gateway_reference=f"GW-{i:06d}",masked_payment_reference="**** demo",issue=issue))
+            db.add(Transaction(transaction_id=txid,order_id=oid,customer_id=cid,payment_method=method,amount=amount,currency="INR",bank_status=bank,gateway_status=gateway,merchant_status=merchant,overall_status=status,gateway_reference=f"GW-{i:06d}",masked_payment_reference="**** 4242",issue=issue))
         # duplicate pair
         order=(await db.execute(select(Order).where(Order.id=="ORD-1029"))).scalar_one(); order.status="PAYMENT_CONFIRMED"
         for txid in ["TXN-10070","TXN-10071"]: db.add(Transaction(transaction_id=txid,order_id="ORD-1029",customer_id="CUS-029",payment_method="CREDIT_CARD",amount=2500,currency="INR",bank_status="DEBITED",gateway_status="SUCCESS",merchant_status="SUCCESS",overall_status="SUCCESS",gateway_reference=f"GW-{txid[-5:]}",masked_payment_reference="**** 4242",issue="Possible duplicate payment for the same order."))

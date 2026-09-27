@@ -10,7 +10,7 @@ from app.core.security import Principal, require
 router = APIRouter(prefix="/investigations", tags=["investigations"])
 
 def out(i):
-    return {"id":i.id,"transactionId":i.transaction_id,"question":i.question,"status":i.status,"steps":i.agent_steps,"summary":i.summary,"cause":i.likely_cause,"evidence":i.evidence,"policyId":i.sources[0]["document"] if i.sources else None,"recommendation":i.recommended_action,"uncertainty":"Synthetic demo result grounded in local policy evidence; sensitive actions are simulated and approval-gated.","requiresApproval":i.approval_required,"createdAt":i.created_at,"duration":i.duration_ms,"sources":i.sources}
+    return {"id":i.id,"transactionId":i.transaction_id,"question":i.question,"status":i.status,"steps":i.agent_steps,"summary":i.summary,"cause":i.likely_cause,"evidence":i.evidence,"policyId":i.sources[0]["document"] if i.sources else None,"recommendation":i.recommended_action,"uncertainty":"Result grounded in retrieved policy evidence; sensitive actions are approval-gated.","requiresApproval":i.approval_required,"createdAt":i.created_at,"duration":i.duration_ms,"sources":i.sources}
 
 @router.post("", status_code=201)
 async def create(
