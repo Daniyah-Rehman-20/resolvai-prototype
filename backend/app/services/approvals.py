@@ -4,6 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import ApprovalRequest, AuditEvent, Transaction, Dispute
 from app.core.exceptions import ApprovalNotFound, DuplicateOperation
+from app.core.config import settings
+from fastapi import HTTPException
 
 async def get_approval(db: AsyncSession, id: str, *, for_update: bool = False):
     stmt = select(ApprovalRequest).where(ApprovalRequest.id == id)
@@ -24,6 +26,8 @@ async def decide(
     approval = await get_approval(db, id, for_update=True)
     if approval.status not in {"PENDING", "MORE_INFORMATION_REQUIRED"}:
         raise DuplicateOperation("This approval has already been decided.")
+    if decision == "APPROVED" and settings.app_env == "production":
+        raise HTTPException(503, "Payment execution is not configured. No financial action was performed.")
 
     approval.status = decision
     approval.reviewer = reviewer

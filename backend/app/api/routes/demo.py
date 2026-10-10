@@ -1,5 +1,6 @@
 from pathlib import Path
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter,Depends,HTTPException
+from app.core.config import settings
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
@@ -10,6 +11,8 @@ router=APIRouter(prefix="/demo",tags=["demo"])
 
 @router.post("/reset")
 async def reset_demo(db:AsyncSession=Depends(get_db), _: Principal = Depends(require("admin"))):
+    if settings.app_env == "production" or not settings.auth_demo_enabled:
+        raise HTTPException(404, "Demo endpoints are disabled")
     for model in [AuditEvent,ApprovalRequest,Investigation,Dispute,Document]:
         await db.execute(delete(model))
     await db.commit()

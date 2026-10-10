@@ -11,6 +11,10 @@ from app.api.routes import (
     audit,
     demo,
     metrics,
+    auth,
+    support,
+    voice,
+    telephony,
 )
 
 router=APIRouter()
@@ -27,5 +31,9 @@ for r in [
     audit.router,
     demo.router,
     metrics.router,
+    auth.router,
+    support.router,
+    voice.router,
+    telephony.router,
 ]:
     router.include_router(r)

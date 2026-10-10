@@ -1,15 +1,6 @@
-# Merchant Reconciliation Policy
+# Merchant reconciliation
+Reviewed: 2026-10-09. Type: product operating guidance.
 
-PayResolve operational policy reference.
+Maintain separate customer-reported, gateway, bank, merchant-order, and settlement states with source timestamps. Missing order confirmation does not prove gateway failure. Match immutable provider references; verify webhook authenticity and replay protection before treating provider events as evidence. Re-query the authorized provider before any financial action.
 
-## Scope
-This policy applies to payment investigation workflows handled within PayResolve.
-
-## Investigation guidance
-Compare bank, gateway, merchant and order states. Preserve evidence, correlation identifiers and timestamps. Never request CVV, PIN, UPI PIN, bank passwords or real financial credentials.
-
-## Resolution guidance
-For informational or pending states, prefer wait, recheck, reconciliation or escalation. Any refund, reversal, or dispute recommendation must pass deterministic backend risk checks and human approval before an execution request is recorded.
-
-## Merchant mismatch
-When the bank is debited and gateway reports success but merchant confirmation fails, reconcile gateway and merchant records before any refund recommendation.
+If bank debit, gateway capture, and order state disagree, investigate the mismatch and avoid duplicate refunds. The merchant's settlement schedule is contract-specific and is not established by this knowledge base. Treat unconnected data sources as unavailable, not as success or failure. Escalate unresolved mismatches to an authorized operator with an evidence timeline.

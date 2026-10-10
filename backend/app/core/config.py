@@ -1,6 +1,8 @@
 from functools import lru_cache
-from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import json
+from typing import Annotated
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -21,10 +23,18 @@ class Settings(BaseSettings):
     reranker_model: str = "BAAI/bge-reranker-base"
     semantic_rag_enabled: bool = False
     async_ingestion_enabled: bool = False
-    cors_origins: list[str] = ["http://localhost:3000"]
-    rate_limit_requests: int = 60
-    rate_limit_window_seconds: int = 60
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
+    rate_limit_requests: int = Field(default=60, ge=1, le=100000)
+    rate_limit_window_seconds: int = Field(default=60, ge=1, le=86400)
+    auth_demo_enabled: bool = False
+    auth_session_hours: int = Field(default=24, ge=1, le=168)
     auth_demo_token: str = "payresolve-demo-token"
+
+    @model_validator(mode="after")
+    def guard_demo_auth(self):
+        if self.auth_demo_enabled and self.app_env not in {"development", "test"}:
+            raise ValueError("Demo authentication is permitted only in development or test")
+        return self
 
     @field_validator("database_url", mode="before")
     @classmethod
@@ -37,7 +47,7 @@ class Settings(BaseSettings):
     @classmethod
     def parse_origins(cls, value):
         if isinstance(value, str):
-            origins = [x.strip() for x in value.split(",") if x.strip()]
+            origins = json.loads(value) if value.strip().startswith("[") else [x.strip() for x in value.split(",") if x.strip()]
         else:
             origins = value
         if isinstance(origins, list):

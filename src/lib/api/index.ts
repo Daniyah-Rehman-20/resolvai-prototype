@@ -1,3 +1,4 @@
+import { sessionToken } from "@/lib/support-api";
 import type {
   AppData,
   ApprovalRequest,
@@ -43,10 +44,13 @@ function writeSettings(settings: Settings) {
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  // Identity bridge. Replace with an OIDC/JWT session provider for organization-managed authentication.
-  headers.set("Authorization", `Bearer ${DEMO_TOKEN}`);
-  headers.set("X-Demo-Role", DEMO_ROLE);
-  headers.set("X-Demo-User", "payresolve-ui");
+  const token = sessionToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  else if (process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
+    headers.set("Authorization", `Bearer ${DEMO_TOKEN}`);
+    headers.set("X-Demo-Role", DEMO_ROLE);
+    headers.set("X-Demo-User", "payresolve-ui");
+  }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,

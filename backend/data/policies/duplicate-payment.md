@@ -1,15 +1,6 @@
-# Duplicate Payment Policy
+# Suspected duplicate payments
+Reviewed: 2026-10-09. Type: product operating guidance.
 
-PayResolve operational policy reference.
+Similar timestamps and amounts identify candidates, not proof of duplicate debit. Compare order identity, payment references, provider captures, ledger postings, and existing refunds. Two intentional purchases can have equal amounts. An authorization plus a posted debit can appear as two entries without two settled charges. Record uncertainty and request evidence.
 
-## Scope
-This policy applies to payment investigation workflows handled within PayResolve.
-
-## Investigation guidance
-Compare bank, gateway, merchant and order states. Preserve evidence, correlation identifiers and timestamps. Never request CVV, PIN, UPI PIN, bank passwords or real financial credentials.
-
-## Resolution guidance
-For informational or pending states, prefer wait, recheck, reconciliation or escalation. Any refund, reversal, or dispute recommendation must pass deterministic backend risk checks and human approval before an execution request is recorded.
-
-## Duplicate detection
-Compare transactions sharing the same order, amount, instrument class and nearby timestamps. Any refund or reversal remains simulated and approval-gated.
+Do not select a regulatory reversal deadline until the incident is classified. For a confirmed extra successful capture, use the merchant/provider refund process. For an unresolved failure, use the applicable rail-specific policy. Prevent multiple resolution actions for one payment; never mark money returned solely because a reviewer approved a request.

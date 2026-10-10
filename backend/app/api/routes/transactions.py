@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import Principal, require
+from app.core.config import settings
 from app.db.session import get_db
 from app.models import AuditEvent, Customer, Order, Transaction
 from app.repositories.transactions import TransactionRepository
@@ -211,6 +212,8 @@ async def run_use_case(
     db: AsyncSession = Depends(get_db),
     principal: Principal = Depends(require("analyst")),
 ):
+    if settings.app_env == "production" or not settings.auth_demo_enabled:
+        raise HTTPException(404, "Demo endpoints are disabled")
     token = uuid.uuid4().hex[:6].upper()
 
     if use_case == "charged-order-failed":

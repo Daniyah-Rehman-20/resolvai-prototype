@@ -1,119 +1,81 @@
-# PayResolve AI — complete frontend
+# PayResolve AI
 
-A Next.js payment-operations workspace for Daniyah Rehman's portfolio. Investigate fictional credit-card, debit-card, UPI, and cash payment issues and review proposed resolutions with human approval.
+A payment-failure support application with a Next.js frontend, FastAPI API and PostgreSQL persistence. Customers can register, discuss failed transactions, record a browser voice message with consent, and review the queries captured from their conversation. Staff access is separately provisioned.
 
-## Run on your computer
+This change implements an application foundation, not a claim of production certification or live bank connectivity. Browser voice is **record → transcribe → reply**. An optional Twilio adapter supports incoming telephone recording turns after number/credentials/TLS configuration; neither channel implements full-duplex real-time calls. Existing payment investigation screens still use synthetic payment records and deterministic investigation rules; they cannot verify a bank balance or issue a real refund.
 
-Use Node.js 20.9 or newer (a supported LTS release is recommended).
+## Start the full application
 
-1. Extract this project into a new folder, or copy its files into your existing repository while keeping your existing `.git` directory.
-2. Open the project folder in VS Code and open a terminal there.
-3. Run:
+Prerequisites: Docker Engine and Docker Compose v2.20+.
+
+```bash
+cp .env.example .env
+# Edit .env: replace POSTGRES_PASSWORD with a random URL-safe password.
+# Optional: set SUPPORT_AI_API_KEY and VOICE_TRANSCRIPTION_API_KEY.
+docker compose up --build -d
+```
+
+Open **http://localhost:3000/support**, register a customer account, and start a chat. Without an AI key, intake uses an explicitly identified deterministic response; without a transcription key, transcription reports unavailable. No provider response or transcript is fabricated. AI and transcription calls can incur provider charges.
+
+The stack binds browser/API ports to loopback only. PostgreSQL and Redis have no host-exposed ports. Migrations run before the API starts; a database is created without demo accounts or payment fixtures. PostgreSQL records and private recordings use named volumes and survive ordinary container restarts. Do not use `docker compose down -v` unless you intend to erase those volumes.
+
+Create a staff account interactively:
+
+```bash
+docker compose exec api python -m scripts.create_staff analyst@example.com --role analyst
+```
+
+The command prompts for a password. Available staff roles: `viewer`, `analyst`, `approver`, `admin`. Customer signup never selects a staff role.
+
+## Implemented scope
+
+| Area | Behavior |
+| --- | --- |
+| Identity | Database-backed users, password hashing, expiring/revocable bearer sessions, server-side roles; demo authentication off by default |
+| Customer chat | Owner-scoped persisted conversations, messages and extracted queries; user statements are unverified claims |
+| Voice | Explicit recording consent, private audio storage, bounded upload, provider transcription and support intake |
+| Guidance | Payment-policy guidance and optional AI replies; no automatic money movement |
+| Deployment | PostgreSQL/Redis Compose stack, database migrations, health checks, persistent volumes, non-root containers and CI |
+| Legacy workspace | Transaction/investigation/approval UI retained; source records and investigation rules remain demonstration data |
+
+For optional telephone calls, follow [telephone setup](docs/TELEPHONY.md) and the worker instructions in [operations](docs/OPERATIONS.md). Live call testing requires your provider account.
+
+See [build validation](docs/BUILD_VALIDATION.md) for executed checks and unverified deployment/provider boundaries. Production payment approvals fail closed until a real execution integration is implemented.
+
+See [implementation tasks](docs/IMPLEMENTATION_PLAN.md), [operations](docs/OPERATIONS.md), and the policy research documents in `docs/` for scope and launch gates.
+
+## Develop without Docker
+
+Use Node.js 22 and Python 3.12+. Start Redis locally for the production-style limiter, or use `APP_ENV=development` for the bounded in-process fallback.
+
+```bash
+cd backend
+python -m venv .venv
+. .venv/bin/activate
+pip install -e '.[dev]'
+cp .env.example .env
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+In another terminal at the repository root:
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. The root opens the dashboard. If that port is occupied, use the alternate URL printed in the terminal. Keep the terminal running and press Ctrl+C to stop it.
-
-For a production build:
+`backend/.env.example` uses SQLite for convenient local work only; Compose uses PostgreSQL. Set `NEXT_PUBLIC_API_URL` in the root `.env` if your API is not at `http://localhost:8000`. Never place provider credentials in `NEXT_PUBLIC_*` variables.
 
 ```bash
 npm run lint
 npm run typecheck
 npm run build
-npm start
-```
-
-If PowerShell blocks `npm.ps1`, use Command Prompt from the VS Code terminal dropdown. No API key, database, cloud account, or environment file is required.
-
-## Pages and functionality
-
-| Route                | Features                                                                                                                                                                     |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/dashboard`         | Eight metrics, daily outcome chart, method distribution, issue categories, recent investigations, approval previews, CSV summary export.                                     |
-| `/transactions`      | Search by transaction/order/customer, method/status/date filters, sorting, pagination, links to details.                                                                     |
-| `/transactions/[id]` | Payment state comparison, mismatch highlighting, customer summary, timeline, investigation findings, policy evidence, agent steps, audit history.                            |
-| `/investigator`      | Transaction selection, issue input, sequential simulated agent checks, evidence, policy retrieval, uncertainty, recommendation, review requirement, prior runs, error retry. |
-| `/approvals`         | Pending/more-info/approved/rejected views, evidence, policy, reasoning summary, mandatory notes, confirmation, local decision updates and audit events.                      |
-| `/disputes`          | Case filters, transaction links, reviewer notes, confirmed case-status updates and audit events.                                                                             |
-| `/knowledge`         | Policy search, policy reader, PDF/TXT/Markdown upload simulation, file validation, processing/indexing statuses, retry.                                                      |
-| `/agents`            | Run selection, execution path, human handoff, step status/duration/timestamp log.                                                                                            |
-| `/analytics`         | Method success/failure rates, failure reasons, dispute/refund rates, AI resolution and human escalation rates, investigation and resolution times.                           |
-| `/settings`          | Light/dark mode, notifications, failure simulation, confirmed reset of local demo records.                                                                                   |
-
-The shared shell includes sidebar navigation, global transaction search, notifications, profile/settings menu, mobile navigation, a skip link, and status feedback. Dialogs use native modal semantics and keyboard dismissal. Loading, empty, success, and failure states are included.
-
-## Try an end-to-end workflow
-
-1. Open Transactions, find `TXN-10001`, and open it. Inspect the debit and failed order mismatch.
-2. Click **Investigate payment**, then **Start investigation**. Each simulated step completes in order.
-3. Read the evidence and uncertainty, then open **Approval Queue**.
-4. Click **Approve** on a proposal. Confirm remains disabled until a review note is entered. Cancel to leave the request unchanged, or confirm to save the decision.
-5. Open the transaction's **Audit log**. Refresh the page: the decision remains saved in this browser.
-6. Upload a small `.txt` document in Knowledge Base. Watch the simulated status change from Processing to Ready.
-7. Enable **Simulate a source failure** in Settings and save. A new investigation fails at its evidence-source step; disable/retry from the error panel. Document processing can also fail and be retried after disabling the setting.
-8. Switch to dark mode, save, and inspect the pages at mobile width. Reset the demo in Settings when finished.
-
-## Architecture
-
-- `src/app/`: App Router pages, root layout, loading/error/not-found boundaries, favicon.
-- `src/components/layout/`: Shared shell and data context.
-- `src/components/common/`: Panels, badges, empty/loading states, accessible confirmation modal.
-- `src/components/dashboard/`, `transactions/`, `investigator/`, `approvals/`, `knowledge/`, `agents/`: Feature components.
-- `src/lib/types/`: Transaction, Customer, PaymentStatus, PaymentMethod, Investigation, AgentStep, ApprovalRequest, PolicyDocument, AuditEvent, Dispute, Settings, AppData.
-- `src/lib/mocks/`: Central fictional fixtures and agent-step definitions.
-- `src/lib/api/`: Async mock service, persistence, investigations, decisions, uploads, settings, dispute updates.
-- `src/lib/utils/`: INR, IST, status labels, and percentage formatting.
-
-Pages/components call the service layer and do not import mock fixtures. Next.js route wrappers pass identifiers to client components. The shared context refreshes after mutations so related views use the same state.
-
-### FastAPI integration
-
-The Next.js workspace now calls the FastAPI backend directly. The frontend service layer uses `NEXT_PUBLIC_API_URL` (default: `http://127.0.0.1:8000`) for transactions, investigations, approvals, disputes, documents, audit history, and demo reset. Theme/notification/failure-simulation preferences remain browser-local because they are UI settings.
-
-Run the backend first:
-
-```bash
 cd backend
-python -m app.db.seed
-python -m uvicorn app.main:app --reload
+ruff check app tests
+pytest -q
 ```
 
-Then, from the repository root in a second terminal:
+## Before public launch
 
-```bash
-npm ci
-npm run dev
-```
-
-Open http://localhost:3000. The local backend must allow that origin through `CORS_ORIGINS`. For deployment, set `NEXT_PUBLIC_API_URL` to the public FastAPI URL and set backend `CORS_ORIGINS` to the deployed frontend origin.
-
-The integration remains a synthetic payment-operations demo: no real bank, gateway, merchant, refund, or external LLM action is performed. Real production use would still require authentication, authorization, provider integrations, durable infrastructure, stronger audit controls, and production secret management.
-
-## Demo behavior and limits
-
-- All records are fictional. Customer emails use `example.test`; instrument values are masked.
-- The 48-transaction cohort is dated 15–21 September 2026. New local activity uses the current timestamp. Dates display in IST.
-- Investigations use deterministic rules, not a live LLM. They do not actually contact banks, gateways, or merchants. Uploaded policies do not influence the fixed recommendation rules.
-- Refund approval changes a local transaction to `REFUND_PENDING`; it does not pretend that a real refund settled. Dispute approval creates a local case. Escalation approval records the human decision in the audit log.
-- Dispute resolution changes case status only, not the financial transaction status.
-- Duplicate pending/more-information approval requests are prevented for the same transaction. Decided requests cannot be decided again.
-- Uploads store metadata only, not file bytes. Chunk counts and indexing are explicitly simulated. Only PDF/TXT/Markdown files from 1 byte to 10 MB are accepted.
-- LocalStorage saves demo state under `payresolve-demo-v2`. It is local to one browser/origin, not shared multi-user storage. Browser privacy settings must allow local storage. Simultaneous multi-tab editing is not supported.
-- Simulation traces persist when a run finishes. Closing the browser during a run does not persist an unfinished run. A document stuck Processing after a reload can be retried.
-- Analytics derive from current local records. Resolution time covers only completed no-action demo cases; it does not imply real banking resolution performance.
-- Reset clears demo edits and restores fixtures after confirmation.
-
-## Push updates to your existing GitHub repository
-
-After copying the project files into your existing checkout (preserving its `.git` folder):
-
-```bash
-git add .
-git commit -m "Build complete PayResolve AI frontend"
-git push
-```
-
-Keep `.gitignore`: it excludes dependencies, build output, local environment files, and generated TypeScript artifacts. The ZIP contains source and the dependency lockfile, not `node_modules` or `.next`.
+Supply provider credentials and a TLS domain, configure recording retention, test backups and recovery, verify account recovery/email verification/MFA needs, complete privacy and payment-policy review, and integrate a contracted bank/payment gateway with authenticated signed events. Genuine transaction data must come from an authorized provider or consented account integration, never a scraped database. See the operations guide for the full checklist and the distinction between persisted customer intake and verified payment status.

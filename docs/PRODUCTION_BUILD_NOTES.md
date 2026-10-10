@@ -1,4 +1,6 @@
-# PayResolve AI — Build Notes
+# PayResolve AI — Historical Prototype Build Notes
+
+> Historical description of the earlier demo-hardening stage. Authentication, deployment and customer intake have since changed. Use the root README, IMPLEMENTATION_PLAN.md and OPERATIONS.md for current behavior; statements below are not current launch claims.
 
 This is the short, interview-friendly explanation of how the prototype is being hardened. It intentionally stays practical rather than documenting every line of code.
 

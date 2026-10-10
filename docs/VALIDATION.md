@@ -1,4 +1,6 @@
-# Frontend verification
+# Historical prototype frontend verification
+
+> These are earlier prototype checks, not validation of the new authenticated customer support/voice implementation or evidence of a production release.
 
 Verified against the local production build on 22 September 2026.
 

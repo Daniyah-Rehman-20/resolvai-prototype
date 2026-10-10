@@ -1,8 +1,14 @@
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.config import settings
 
 client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def explicitly_enable_development_demo(monkeypatch):
+    monkeypatch.setattr(settings, "auth_demo_enabled", True)
+    monkeypatch.setattr(settings, "app_env", "test")
 
 def auth(role: str):
     return {

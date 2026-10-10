@@ -1,53 +1,48 @@
-# PayResolve AI Backend
+# PayResolve AI API
 
-FastAPI backend for the synthetic **Agentic Payment Investigation & Resolution Platform**. It never transfers real funds and never requests CVV/PIN/UPI PIN. Refunds/reversals are simulated and sensitive actions are approval-gated.
+FastAPI, SQLAlchemy and Alembic backend for persistent customer support intake and the legacy synthetic payment-investigation workspace. Real authentication and support persistence do not imply live payment verification: no bank connection or real refund is implemented.
 
-## Architecture
-Frontend → FastAPI → SQLAlchemy/Postgres → investigation workflow → local policy retrieval (Qdrant-ready) → deterministic risk gate → human approval → mock action → audit. RabbitMQ/Celery, Redis, Qdrant, Prometheus/Langfuse are optional infrastructure adapters; core local development works without paid credentials.
+Use the [root README](../README.md) for the PostgreSQL/Redis Compose stack and [operations runbook](../docs/OPERATIONS.md) for retention, backup, deployment and launch gaps.
 
-## Run locally
+## Local development
+
+Python 3.12+ is required. From this directory:
+
 ```bash
-cd backend
 python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
+# Linux/macOS:
+. .venv/bin/activate
+# Windows PowerShell instead: .venv\Scripts\Activate.ps1
 pip install -e '.[dev]'
 cp .env.example .env
-python -m app.db.seed
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
-Swagger: http://localhost:8000/docs · ReDoc: http://localhost:8000/redoc · Health: http://localhost:8000/health
 
-## Docker
+This uses SQLite for local development. Run Redis locally, or keep `APP_ENV=development` for the limited in-process rate-limit fallback. Production requires Redis. Interactive API docs are at `/docs` in development and disabled in production.
+
+Create customer accounts through `POST /auth/register` or the frontend `/support` page. Provision staff using `python -m scripts.create_staff analyst@example.com --role analyst`. Demo authentication is disabled by default and rejected in production. Do not seed synthetic payment fixtures into a customer database.
+
+## Core contracts
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /auth/register`, `POST /auth/login` | Issue a database-backed bearer session |
+| `GET /auth/me`, `POST /auth/logout` | Read identity / revoke session |
+| `GET/POST /support/conversations` | List own conversations / create conversation |
+| `GET /support/conversations/{id}` | Read own persisted messages and queries |
+| `POST /support/conversations/{id}/messages` | Submit text, extract intake queries and reply |
+| `POST /support/conversations/{id}/audio` | Transcribe consented recording and submit intake |
+| `GET /support/queue`, `PATCH /support/queries/{id}` | Staff review, without financial action |
+| `GET /health`, `GET /health/ready` | Liveness / database and Redis readiness |
+
+See [voice details](../docs/VOICE.md) for recording list/download/delete APIs and provider configuration. Provider credentials stay server-side. Without optional AI credentials, text uses labeled guided intake; voice transcription requires configured provider credentials.
+
+## Verification
+
 ```bash
-cp .env.example .env
-docker compose up -d --build
-docker compose exec api python -m app.db.seed
-```
-
-## Demo journeys
-1. `POST /investigations` with `TXN-10021`: bank DEBITED + gateway SUCCESS + merchant FAILED → reconciliation evidence.
-2. `POST /investigations` with `TXN-10035`: UPI PENDING → wait/recheck policy path; no automatic refund.
-3. `TXN-10070` and `TXN-10071`: duplicate pair tied to `ORD-1029`; simulated refund requires approval.
-
-Example:
-```json
-{"transaction_id":"TXN-10021","question":"₹2,000 was deducted but my order failed. What happened?"}
-```
-
-## Tests/evaluation
-```bash
-pytest -q
-python scripts/evaluate_retrieval.py
 ruff check app tests
+pytest -q
 ```
-Measured in this build sandbox on the 30-question synthetic set using the offline lexical fallback: Recall@1=0.60, Recall@3=0.80, Recall@5=0.80, MRR=0.70. Re-run after enabling BGE/Qdrant/reranking because those results will differ.
 
-## Frontend compatibility
-Routes shape transactions and investigations to the existing camelCase TypeScript contracts (`id`, `orderId`, `method`, `bank`, `gateway`, `merchant`, `createdAt`, `requiresApproval`, etc.).
-
-## Credentials / Azure
-No credentials are required for the local demo. For deployment, replace the SQLite URL with Azure Database for PostgreSQL, object storage with Azure Blob, and secrets with Key Vault. Qdrant can remain containerized. Ollama/cloud LLMs may be added behind the provider abstraction without changing API contracts.
-
-## Current limitations
-The checked-in local retriever is deterministic lexical retrieval so the project runs offline. Qdrant/BGE/reranker dependencies and service slots are provisioned but a production embedding ingestion adapter still needs model download/network access. LangGraph state persistence, full Redis distributed rate limiting/idempotency, Prometheus/Grafana provisioning, and a complete MCP transport server are extension points rather than falsely claimed as verified in this offline build.
+CI separately migrates PostgreSQL and exercises the actual API application against PostgreSQL/Redis. Unit tests and mocked provider tests do not replace a real microphone/provider end-to-end test. See [implementation tasks](../docs/IMPLEMENTATION_PLAN.md) for work remaining before public launch.

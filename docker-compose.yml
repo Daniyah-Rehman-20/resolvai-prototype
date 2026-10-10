@@ -1,0 +1,99 @@
+# Single-host deployment baseline. Put a TLS reverse proxy in front for public use.
+services:
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/support').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment: &api-environment
+      APP_ENV: production
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://payresolve:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/payresolve
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      AUTH_DEMO_ENABLED: "false"
+      AUTH_SESSION_HOURS: "24"
+      SEMANTIC_RAG_ENABLED: "false"
+      ASYNC_INGESTION_ENABLED: "false"
+      SUPPORT_AI_API_KEY: ${SUPPORT_AI_API_KEY:-}
+      SUPPORT_AI_BASE_URL: ${SUPPORT_AI_BASE_URL:-https://api.openai.com/v1}
+      SUPPORT_AI_MODEL: ${SUPPORT_AI_MODEL:-gpt-4.1-mini}
+      TELEPHONY_ENABLED: ${TELEPHONY_ENABLED:-false}
+      TELEPHONY_ACCOUNT_SID: ${TELEPHONY_ACCOUNT_SID:-}
+      TELEPHONY_AUTH_TOKEN: ${TELEPHONY_AUTH_TOKEN:-}
+      TELEPHONY_PUBLIC_BASE_URL: ${TELEPHONY_PUBLIC_BASE_URL:-}
+      TELEPHONY_PHONE_NUMBER: ${TELEPHONY_PHONE_NUMBER:-}
+      VOICE_STORAGE_DIR: /app/recordings
+      VOICE_TRANSCRIPTION_API_KEY: ${VOICE_TRANSCRIPTION_API_KEY:-}
+      VOICE_TRANSCRIPTION_BASE_URL: ${VOICE_TRANSCRIPTION_BASE_URL:-https://api.openai.com/v1}
+      VOICE_TRANSCRIPTION_MODEL: ${VOICE_TRANSCRIPTION_MODEL:-gpt-4o-mini-transcribe}
+      VOICE_MAX_UPLOAD_BYTES: ${VOICE_MAX_UPLOAD_BYTES:-10485760}
+      VOICE_RETENTION_DAYS: ${VOICE_RETENTION_DAYS:-7}
+    ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - uploads:/app/uploads
+      - recordings:/app/recordings
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5)"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 60s
+
+  telephony-worker:
+    build: ./backend
+    profiles: [telephony]
+    restart: unless-stopped
+    command: ["python", "-m", "app.services.telephony_worker"]
+    environment: *api-environment
+    volumes: ["recordings:/app/recordings"]
+    depends_on:
+      api: {condition: service_healthy}
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: payresolve
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: payresolve
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payresolve -d payresolve"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:
+  redis-data:
+  uploads:
+  recordings:
