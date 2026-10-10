@@ -2,7 +2,7 @@
 
 A payment-failure support application with a Next.js frontend, FastAPI API and PostgreSQL persistence. Customers can register, discuss failed transactions, record a browser voice message with consent, and review the queries captured from their conversation. Staff access is separately provisioned.
 
-This change implements an application foundation, not a claim of production certification or live bank connectivity. Browser voice is **record → transcribe → reply**. An optional Twilio adapter supports incoming telephone recording turns after number/credentials/TLS configuration; neither channel implements full-duplex real-time calls. Existing payment investigation screens still use synthetic payment records and deterministic investigation rules; they cannot verify a bank balance or issue a real refund.
+This change implements an application foundation, not a claim of production certification or live bank connectivity. Browser voice is **record → transcribe → reply**. An optional Twilio adapter supports incoming telephone recording turns after number/credentials/TLS configuration; neither channel implements full-duplex real-time calls. The application captures customer-provided concerns and provides guidance; it cannot verify a bank balance, confirm settlement or issue a refund.
 
 ## Start the full application
 
@@ -31,16 +31,16 @@ The command prompts for a password. Available staff roles: `viewer`, `analyst`, 
 
 | Area | Behavior |
 | --- | --- |
-| Identity | Database-backed users, password hashing, expiring/revocable bearer sessions, server-side roles; demo authentication off by default |
+| Identity | Database-backed users, password hashing, expiring/revocable bearer sessions, server-side roles and interactive staff provisioning |
 | Customer chat | Owner-scoped persisted conversations, messages and extracted queries; user statements are unverified claims |
 | Voice | Explicit recording consent, private audio storage, bounded upload, provider transcription and support intake |
 | Guidance | Payment-policy guidance and optional AI replies; no automatic money movement |
 | Deployment | PostgreSQL/Redis Compose stack, database migrations, health checks, persistent volumes, non-root containers and CI |
-| Legacy workspace | Transaction/investigation/approval UI retained; source records and investigation rules remain demonstration data |
+| Staff review | Authenticated query queue and status updates, without financial actions |
 
 For optional telephone calls, follow [telephone setup](docs/TELEPHONY.md) and the worker instructions in [operations](docs/OPERATIONS.md). Live call testing requires your provider account.
 
-See [build validation](docs/BUILD_VALIDATION.md) for executed checks and unverified deployment/provider boundaries. Production payment approvals fail closed until a real execution integration is implemented.
+See [build validation](docs/BUILD_VALIDATION.md) for executed checks and unverified deployment/provider boundaries. No payment-execution endpoint is provided.
 
 See [implementation tasks](docs/IMPLEMENTATION_PLAN.md), [operations](docs/OPERATIONS.md), and the policy research documents in `docs/` for scope and launch gates.
 
@@ -75,6 +75,10 @@ cd backend
 ruff check app tests
 pytest -q
 ```
+
+## Repository scope
+
+The prototype payment dashboard, synthetic transaction seed, demo identity bridge, simulated investigations/refunds, and obsolete screenshots have been removed. Customer support, policy references, consented voice intake and optional incoming telephone recording remain. Historical database tables and migrations are retained for existing database compatibility; this cleanup does not drop data or rewrite applied migrations.
 
 ## Before public launch
 

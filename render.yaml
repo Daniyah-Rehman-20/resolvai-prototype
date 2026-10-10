@@ -29,12 +29,6 @@ services:
           name: payresolve-web
           type: web
           envVarKey: RENDER_EXTERNAL_URL
-      - key: AUTH_DEMO_ENABLED
-        value: "false"
-      - key: SEMANTIC_RAG_ENABLED
-        value: "false"
-      - key: ASYNC_INGESTION_ENABLED
-        value: "false"
 
   - type: web
     name: payresolve-web

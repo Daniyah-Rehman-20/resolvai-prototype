@@ -2,7 +2,7 @@
 
 ## Deployment status and boundaries
 
-The supplied Compose stack is a single-host baseline for testing and a controlled pilot after review. It has not been deployed to a public cloud, certified, or connected to a bank. `/support` persists real customer-provided intake; it does not establish a transaction's bank status. Legacy payment fixtures and investigation outcomes are synthetic. No refund or complaint is submitted to an external institution.
+The supplied Compose stack is a single-host baseline for testing and a controlled pilot after review. It has not been deployed to a public cloud, certified, or connected to a bank. `/support` persists real customer-provided intake; it does not establish a transaction's bank status. No refund or complaint is submitted to an external institution.
 
 Voice is browser **record, upload, transcribe, reply**. An optional Twilio adapter adds incoming telephone recording turns. Continuous audio streaming, interruption handling and human call transfer remain separate integration tasks. Query extraction is conservative rule-based intake and can miss or combine questions; staff must review it.
 
@@ -17,7 +17,7 @@ docker compose ps
 curl --fail http://localhost:8000/health/ready
 ```
 
-`/health` is process liveness. `/health/ready` requires PostgreSQL and Redis; Qdrant and RabbitMQ can report false because semantic retrieval and async ingestion are disabled in this baseline. Readiness does not test provider credentials, schema compatibility, or recording storage. Production API requests fail with 503 if Redis rate limiting is unavailable.
+`/health` is process liveness. `/health/ready` requires PostgreSQL and Redis. Readiness does not test provider credentials, schema compatibility, or recording storage. Production API requests fail with 503 if Redis rate limiting is unavailable.
 
 The API image runs `alembic upgrade head` before startup. For multiple replicas, run migration as a single release job, then start API workers; do not let workers race schema changes. Provision staff with the interactive command in README. Registration always creates customers. Verify with two accounts that each sees only their conversations, staff queue returns 403 for customers, and logout invalidates the session.
 

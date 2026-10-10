@@ -25,10 +25,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://payresolve:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/payresolve
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-      AUTH_DEMO_ENABLED: "false"
       AUTH_SESSION_HOURS: "24"
-      SEMANTIC_RAG_ENABLED: "false"
-      ASYNC_INGESTION_ENABLED: "false"
       SUPPORT_AI_API_KEY: ${SUPPORT_AI_API_KEY:-}
       SUPPORT_AI_BASE_URL: ${SUPPORT_AI_BASE_URL:-https://api.openai.com/v1}
       SUPPORT_AI_MODEL: ${SUPPORT_AI_MODEL:-gpt-4.1-mini}
@@ -45,7 +42,6 @@ services:
       VOICE_RETENTION_DAYS: ${VOICE_RETENTION_DAYS:-7}
     ports: ["127.0.0.1:8000:8000"]
     volumes:
-      - uploads:/app/uploads
       - recordings:/app/recordings
     depends_on:
       postgres: {condition: service_healthy}
@@ -95,5 +91,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
-  uploads:
   recordings:

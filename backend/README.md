@@ -1,6 +1,6 @@
 # PayResolve AI API
 
-FastAPI, SQLAlchemy and Alembic backend for persistent customer support intake and the legacy synthetic payment-investigation workspace. Real authentication and support persistence do not imply live payment verification: no bank connection or real refund is implemented.
+FastAPI, SQLAlchemy and Alembic backend for persistent customer support intake, staff query review and consented voice/telephone intake. Real authentication and support persistence do not imply live payment verification: no bank connection or real refund is implemented.
 
 Use the [root README](../README.md) for the PostgreSQL/Redis Compose stack and [operations runbook](../docs/OPERATIONS.md) for retention, backup, deployment and launch gaps.
 
@@ -21,7 +21,7 @@ uvicorn app.main:app --reload
 
 This uses SQLite for local development. Run Redis locally, or keep `APP_ENV=development` for the limited in-process rate-limit fallback. Production requires Redis. Interactive API docs are at `/docs` in development and disabled in production.
 
-Create customer accounts through `POST /auth/register` or the frontend `/support` page. Provision staff using `python -m scripts.create_staff analyst@example.com --role analyst`. Demo authentication is disabled by default and rejected in production. Do not seed synthetic payment fixtures into a customer database.
+Create customer accounts through `POST /auth/register` or the frontend `/support` page. Provision staff using `python -m scripts.create_staff analyst@example.com --role analyst`. Authentication uses persisted accounts and revocable sessions; staff roles are provisioned server-side. Synthetic payment fixtures and demo identity headers are not supported.
 
 ## Core contracts
 
@@ -37,6 +37,10 @@ Create customer accounts through `POST /auth/register` or the frontend `/support
 | `GET /health`, `GET /health/ready` | Liveness / database and Redis readiness |
 
 See [voice details](../docs/VOICE.md) for recording list/download/delete APIs and provider configuration. Provider credentials stay server-side. Without optional AI credentials, text uses labeled guided intake; voice transcription requires configured provider credentials.
+
+## Database compatibility
+
+Historical payment-table metadata is isolated in `app/db/legacy_schema.py` for Alembic compatibility, preserving existing databases. They are not exposed by payment-investigation or financial-action APIs. Do not rewrite applied migrations or drop existing tables as part of this source cleanup. New installations do not seed payment records.
 
 ## Verification
 

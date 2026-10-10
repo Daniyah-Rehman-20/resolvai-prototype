@@ -7,7 +7,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.api.routes.auth import router
-from app.core.config import Settings, settings
 from app.core.security import current_principal, require
 from app.db.base import Base
 from app.db.session import get_db
@@ -17,7 +16,6 @@ from app.services.auth import token_digest, verify_password
 
 @pytest.fixture
 async def auth_app(tmp_path, monkeypatch):
-    monkeypatch.setattr(settings, "auth_demo_enabled", False)
     engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path}/auth.db")
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     async with engine.begin() as conn:
@@ -84,7 +82,7 @@ async def test_expired_and_invalid_session(auth_app):
         session = await db.get(AuthSession, token_digest(token))
         session.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
         await db.commit()
-    for bearer in [token, token + "tampered", settings.auth_demo_token]:
+    for bearer in [token, token + "tampered", "payresolve-demo-token"]:
         assert client.get("/auth/me", headers={"Authorization": f"Bearer {bearer}"}).status_code == 401
 
 
@@ -98,9 +96,3 @@ async def test_generic_credentials_errors_and_unique_email(auth_app):
     duplicate = client.post("/auth/register", json={"email": " USER@example.com ", "password": "Strong passphrase 123!"})
     assert duplicate.status_code == 409
     assert client.post("/auth/register", json={"email": "new@example.com", "password": "short"}).status_code == 422
-
-
-def test_production_demo_guard():
-    with pytest.raises(ValueError, match="Demo authentication"):
-        Settings(app_env="production", auth_demo_enabled=True)
-    assert Settings(app_env="production", auth_demo_enabled=False).auth_demo_enabled is False

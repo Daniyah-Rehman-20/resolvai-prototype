@@ -59,7 +59,6 @@ jobs:
     env:
       APP_ENV: production
       DEBUG: "false"
-      AUTH_DEMO_ENABLED: "false"
       DATABASE_URL: postgresql+asyncpg://payresolve:ci-only-password@localhost:5432/payresolve
       REDIS_URL: redis://localhost:6379/0
       SUPPORT_AI_API_KEY: ""

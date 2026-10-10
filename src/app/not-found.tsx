@@ -1,12 +1,11 @@
 import Link from "next/link";
+
 export default function NotFound() {
   return (
-    <div className="empty">
+    <main className="page-state">
       <h1>Page not found</h1>
-      <p>Choose a page from the sidebar or return to the dashboard.</p>
-      <Link className="button" href="/dashboard">
-        Back to dashboard
-      </Link>
-    </div>
+      <p>Return to your support space to continue a conversation or review your queries.</p>
+      <Link className="button" href="/support">Back to support</Link>
+    </main>
   );
 }
