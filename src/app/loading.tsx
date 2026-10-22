@@ -1,4 +1,3 @@
-import { Busy } from "@/components/common/ui";
 export default function Loading() {
-  return <Busy text="Loading page…" />;
+  return <main className="page-state" role="status">Loading your support space…</main>;
 }

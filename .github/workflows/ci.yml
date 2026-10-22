@@ -33,3 +33,47 @@ jobs:
       - run: ruff check app tests
       - run: pytest -q
       - run: docker build -t payresolve-api .
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: payresolve
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: payresolve
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U payresolve -d payresolve"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      APP_ENV: production
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://payresolve:ci-only-password@localhost:5432/payresolve
+      REDIS_URL: redis://localhost:6379/0
+      SUPPORT_AI_API_KEY: ""
+      VOICE_TRANSCRIPTION_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Migrate empty PostgreSQL database
+        run: alembic upgrade head
+      - name: Verify migration idempotence and metadata drift
+        run: |
+          alembic upgrade head
+          alembic check
+      - name: Exercise authenticated support against PostgreSQL and Redis
+        run: python ../.github/scripts/postgres_smoke.py

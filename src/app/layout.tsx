@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Workspace } from "@/components/layout/workspace";
 import "./globals.css";
+
 export const metadata: Metadata = {
-  title: "PayResolve AI | Payment Operations",
+  title: "ResolveAI | Payment Support",
   description:
-    "Investigate payment issues, review evidence, and authorize recommended resolutions.",
+    "Discuss payment problems by chat or voice, keep track of your queries, and get support guidance.",
 };
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <Workspace>{children}</Workspace>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

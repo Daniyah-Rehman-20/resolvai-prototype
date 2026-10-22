@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Commit documented placeholders, never real credentials.
+!.env.example
+!backend/.env.example
+backend/recordings/
+backend/uploads/
+backend/*.db
+backend/.venv/
+backend/__pycache__/
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/data/private-recordings/

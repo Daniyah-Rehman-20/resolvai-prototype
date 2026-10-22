@@ -1,31 +1,16 @@
 from fastapi import APIRouter
-from app.api.routes import (
-    health,
-    transactions,
-    investigations,
-    approvals,
-    disputes,
-    documents,
-    analytics,
-    chat,
-    audit,
-    demo,
-    metrics,
-)
 
-router=APIRouter()
+from app.api.routes import audit, auth, health, metrics, support, telephony, voice
 
-for r in [
+router = APIRouter()
+
+for route in (
     health.router,
-    transactions.router,
-    investigations.router,
-    approvals.router,
-    disputes.router,
-    documents.router,
-    analytics.router,
-    chat.router,
-    audit.router,
-    demo.router,
     metrics.router,
-]:
-    router.include_router(r)
+    auth.router,
+    support.router,
+    voice.router,
+    telephony.router,
+    audit.router,
+):
+    router.include_router(route)

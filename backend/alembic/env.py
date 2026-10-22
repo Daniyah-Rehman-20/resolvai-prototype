@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.core.config import settings
 from app.db.base import Base
 from app.models import *  # noqa: F403,F401
+from app.db import legacy_schema  # noqa: F401 — retain historical table metadata
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

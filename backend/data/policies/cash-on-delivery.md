@@ -1,12 +1,4 @@
-# Cash on Delivery Policy
+# Cash on delivery
+Reviewed: 2026-10-09. Type: product operating guidance.
 
-PayResolve operational policy reference.
-
-## Scope
-This policy applies to payment investigation workflows handled within PayResolve.
-
-## Investigation guidance
-Compare bank, gateway, merchant and order states. Preserve evidence, correlation identifiers and timestamps. Never request CVV, PIN, UPI PIN, bank passwords or real financial credentials.
-
-## Resolution guidance
-For informational or pending states, prefer wait, recheck, reconciliation or escalation. Any refund, reversal, or dispute recommendation must pass deterministic backend risk checks and human approval before an execution request is recorded.
+Cash collection and delivery disputes use the merchant/courier's evidence and published terms. Do not attach UPI/card reversal deadlines to cash payments. If the courier instead collected an electronic payment, identify that transaction and rail separately. Collect order reference, receipt, collection date, amount, and merchant response. Avoid collecting unnecessary identity documents. No universal cash-on-delivery refund period is verified here.
