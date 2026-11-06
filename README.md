@@ -83,3 +83,11 @@ The prototype payment dashboard, synthetic transaction seed, demo identity bridg
 ## Before public launch
 
 Supply provider credentials and a TLS domain, configure recording retention, test backups and recovery, verify account recovery/email verification/MFA needs, complete privacy and payment-policy review, and integrate a contracted bank/payment gateway with authenticated signed events. Genuine transaction data must come from an authorized provider or consented account integration, never a scraped database. See the operations guide for the full checklist and the distinction between persisted customer intake and verified payment status.
+
+## GitHub Pages
+
+The `Deploy GitHub Pages` workflow exports the frontend from `main`. In repository Settings → Pages, select **GitHub Actions** as the source, then run the workflow.
+
+GitHub Pages hosts the frontend only. Without a backend URL, the site displays an honest service-unavailable page and collects no credentials. Deploy the FastAPI backend, database, Redis and worker using the existing deployment guide. Add its public HTTPS URL as the GitHub Actions repository variable `NEXT_PUBLIC_API_URL`, allow `https://daniyah-rehman-20.github.io` in backend CORS, and rerun the Pages workflow to enable the support workspace. Never place API keys or other secrets in `NEXT_PUBLIC_*` variables.
+
+Local Pages build: `GITHUB_PAGES=true npm run build` (output: `out/`). Standard Docker/server deployments continue to use standalone output.
